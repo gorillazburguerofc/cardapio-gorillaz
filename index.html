@@ -6,7 +6,7 @@
     <title>Cardápio Digital - Gorillaz Burguer</title>
     <style>
         :root {
-            --primary: #f59e0b; /* Laranja/Amarelo Gorillas */
+            --primary: #f59e0b;
             --bg-dark: #121212;
             --bg-card: #1e1e1e;
             --text-light: #f8fafc;
@@ -45,26 +45,45 @@
             letter-spacing: 1px;
         }
         
+        /* NOVO LAYOUT DO ITEM COM FOTO */
         .item { 
             display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
             background: var(--bg-card); 
             padding: 15px; 
             margin-top: 12px; 
             border-radius: 8px; 
             border: 1px solid #2a2a2a;
+            gap: 15px;
+            align-items: center;
         }
-        .item-info { flex: 1; padding-right: 15px; }
+        .item-img {
+            width: 90px;
+            height: 90px;
+            border-radius: 8px;
+            object-fit: cover;
+            background-color: #333;
+            flex-shrink: 0;
+        }
+        .item-info { flex: 1; }
         .item-info h3 { margin: 0 0 5px 0; font-size: 16px; color: #fff;}
-        .item-info p { margin: 0; font-size: 13px; color: #94a3b8; line-height: 1.4; }
-        .price { font-weight: bold; color: var(--success); margin-top: 8px; font-size: 15px;}
+        .item-info p { 
+            margin: 0; font-size: 13px; color: #94a3b8; line-height: 1.4; 
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+        }
+        
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .price { font-weight: bold; color: var(--success); font-size: 16px;}
         
         .btn-add { 
             background: var(--primary); 
             color: #000; 
             border: none; 
-            padding: 10px 15px; 
+            padding: 8px 15px; 
             border-radius: 6px; 
             font-weight: bold; 
             cursor: pointer; 
@@ -172,7 +191,9 @@
     </header>
     
     <div class="container">
-        <div id="menu-items"></div>
+        <div id="menu-items">
+            <p style="text-align: center; color: var(--primary); font-weight: bold;">Carregando cardápio direto da cozinha...</p>
+        </div>
     </div>
 
     <!-- Barra inferior do carrinho -->
@@ -194,17 +215,14 @@
             </h3>
             
             <h3 style="color: var(--primary); margin-top: 25px;">Para Onde Vamos Mandar?</h3>
-            
             <div class="form-group">
                 <label>Seu Nome</label>
                 <input type="text" id="c-name" placeholder="Como devemos te chamar?">
             </div>
-            
             <div class="form-group">
                 <label>Endereço Completo (Rua, Número, Bairro)</label>
                 <input type="text" id="c-address" placeholder="Ex: Rua A, 123 - Centro">
             </div>
-            
             <div class="form-group">
                 <label>Observação (Opcional)</label>
                 <input type="text" id="c-obs" placeholder="Ex: Tirar cebola, ponto da carne...">
@@ -220,7 +238,6 @@
                     <option value="Dinheiro">Dinheiro</option>
                 </select>
             </div>
-            
             <div class="form-group" id="troco-div" style="display:none;">
                 <label>Precisa de troco para quanto?</label>
                 <input type="number" id="c-troco" placeholder="Ex: 50">
@@ -231,24 +248,67 @@
     </div>
 
     <script>
-        // SEU NÚMERO DE WHATSAPP DA GORILLAZ JÁ CONFIGURADO AQUI
+        // CONFIGURAÇÕES INICIAIS
         const phone = "5586994466786"; 
         
-        // SEU CARDÁPIO - VOCÊ PODE EDITAR OS PRODUTOS AQUI FACILMENTE
-        const menu = [
-            { id: 1, category: "🍔 Combos VIP", name: "Combo Oculto", desc: "Pão brioche, blend 180g, duplo cheddar, bacon + Fritas + Refri. O especial do cardápio!", price: 40.00 },
-            { id: 2, category: "🍔 Combos VIP", name: "Combo Clássico", desc: "Pão brioche, blend 180g, queijo prato, salada fresca + Fritas", price: 32.00 },
-            { id: 3, category: "🍔 Hambúrgueres", name: "Gorilla Smash", desc: "Pão brioche, 2x smash 90g, duplo cheddar derretido", price: 25.00 },
-            { id: 4, category: "🍟 Porções", name: "Batata Frita Tradicional", desc: "Porção individual super crocante", price: 12.00 },
-            { id: 5, category: "🥤 Bebidas", name: "Coca-Cola Lata", desc: "350ml trincando de gelada", price: 6.00 },
-            { id: 6, category: "🥤 Bebidas", name: "Guaraná Lata", desc: "350ml trincando de gelada", price: 6.00 }
-        ];
-
+        // 👉 COLE O ID DA SUA PLANILHA AQUI DENTRO DAS ASPAS
+        const SHEET_ID = "1o-DiM4TXG8U--60V2oMdDYcngW9Lq9zEHsscflODR3Y"; 
+        
+        let menu = [];
         let cart = [];
+
+        async function loadMenuFromSheet() {
+            if (SHEET_ID === "COLE_SEU_ID_AQUI") {
+                document.getElementById('menu-items').innerHTML = '<p style="text-align:center; color:#ef4444;">⚠️ Atenção Chefe! Você precisa colocar o ID da Planilha no código HTML.</p>';
+                return;
+            }
+
+            try {
+                const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+                const response = await fetch(url);
+                const text = await response.text();
+                
+                const jsonStr = text.substring(47).slice(0, -2);
+                const data = JSON.parse(jsonStr);
+                const rows = data.table.rows;
+                const newMenu = [];
+                
+                rows.forEach(row => {
+                    if(!row.c[0] || row.c[0].v === null) return; 
+                    
+                    const id = row.c[0].v;
+                    const category = row.c[1] ? row.c[1].v : 'Gorillaz Menu';
+                    const name = row.c[2] ? row.c[2].v : '';
+                    const desc = row.c[3] ? row.c[3].v : '';
+                    const price = row.c[4] ? parseFloat(row.c[4].v) : 0;
+                    const disponivel = row.c[5] ? row.c[5].v : '';
+                    
+                    // 👉 NOVA COLUNA G (Índice 6) - LÊ A IMAGEM
+                    // Se não tiver imagem na planilha, ele usa uma imagem preta padrão
+                    const img = row.c[6] ? row.c[6].v : 'https://via.placeholder.com/150/1e1e1e/f59e0b?text=Gorillaz';
+                    
+                    if(disponivel.toString().toUpperCase() === 'SIM') {
+                        newMenu.push({ id, category, name, desc, price, img });
+                    }
+                });
+                
+                menu = newMenu;
+                renderMenu();
+                
+            } catch (error) {
+                console.error("Erro:", error);
+                document.getElementById('menu-items').innerHTML = '<p style="text-align:center; color:#ef4444;">Erro ao carregar o cardápio. Verifique se você publicou a planilha (Acesso Público).</p>';
+            }
+        }
 
         function renderMenu() {
             let html = '';
             let currentCategory = '';
+            
+            if(menu.length === 0) {
+                document.getElementById('menu-items').innerHTML = '<p style="text-align:center;">Nenhum produto disponível no momento.</p>';
+                return;
+            }
             
             menu.forEach(item => {
                 if (item.category !== currentCategory) {
@@ -257,33 +317,33 @@
                 }
                 html += `
                     <div class="item">
+                        <img src="${item.img}" class="item-img" alt="${item.name}">
                         <div class="item-info">
                             <h3>${item.name}</h3>
                             <p>${item.desc}</p>
-                            <div class="price">R$ ${item.price.toFixed(2)}</div>
+                            <div class="price-row">
+                                <span class="price">R$ ${item.price.toFixed(2)}</span>
+                                <button class="btn-add" onclick="addToCart(${item.id}, event)">+ Add</button>
+                            </div>
                         </div>
-                        <button class="btn-add" onclick="addToCart(${item.id})">+ Add</button>
                     </div>
                 `;
             });
             document.getElementById('menu-items').innerHTML = html;
         }
 
-        function addToCart(id) {
+        function addToCart(id, event) {
             const item = menu.find(i => i.id === id);
             const cartItem = cart.find(i => i.id === id);
             
-            if (cartItem) {
-                cartItem.qtd++;
-            } else {
-                cart.push({ ...item, qtd: 1 });
-            }
+            if (cartItem) cartItem.qtd++;
+            else cart.push({ ...item, qtd: 1 });
+            
             updateCart();
             
-            // Efeito visual no botão
             const btn = event.target;
             const originalText = btn.innerText;
-            btn.innerText = "✓ Adicionado";
+            btn.innerText = "✓ Add";
             btn.style.background = "#10b981";
             btn.style.color = "white";
             setTimeout(() => {
@@ -294,24 +354,15 @@
         }
 
         function updateCart() {
-            let count = 0;
-            let total = 0;
-            
-            cart.forEach(item => {
-                count += item.qtd;
-                total += item.price * item.qtd;
-            });
+            let count = 0; let total = 0;
+            cart.forEach(item => { count += item.qtd; total += item.price * item.qtd; });
             
             document.getElementById('cart-count').innerText = count;
             document.getElementById('cart-total-bar').innerText = total.toFixed(2);
             document.getElementById('cart-total-modal').innerText = total.toFixed(2);
             
-            if (count > 0) {
-                document.getElementById('cart-bar').style.display = 'block';
-            } else {
-                document.getElementById('cart-bar').style.display = 'none';
-                closeCart();
-            }
+            document.getElementById('cart-bar').style.display = count > 0 ? 'block' : 'none';
+            if(count === 0) closeCart();
             renderCartItems();
         }
 
@@ -340,9 +391,7 @@
 
         function changeQtd(index, delta) {
             cart[index].qtd += delta;
-            if (cart[index].qtd <= 0) {
-                cart.splice(index, 1);
-            }
+            if (cart[index].qtd <= 0) cart.splice(index, 1);
             updateCart();
         }
 
@@ -357,11 +406,7 @@
         }
 
         document.getElementById('c-payment').addEventListener('change', function() {
-            if(this.value === 'Dinheiro') {
-                document.getElementById('troco-div').style.display = 'block';
-            } else {
-                document.getElementById('troco-div').style.display = 'none';
-            }
+            document.getElementById('troco-div').style.display = this.value === 'Dinheiro' ? 'block' : 'none';
         });
 
         function sendOrder() {
@@ -376,9 +421,7 @@
                 return;
             }
 
-            // Montar texto pro WhatsApp formatado bonitinho
             let text = "🦍 *NOVO PEDIDO - GORILLAZ BURGUER* 🦍%0A%0A";
-            
             text += "*🛒 ITENS DO PEDIDO:*%0A";
             let total = 0;
             cart.forEach(item => {
@@ -388,24 +431,16 @@
             
             text += `%0A*💰 TOTAL:* R$ ${total.toFixed(2)}%0A`;
             text += `*💳 PAGAMENTO:* ${payment}`;
-            if (payment === 'Dinheiro' && troco) {
-                text += ` (Troco para R$ ${troco})`;
-            }
+            if (payment === 'Dinheiro' && troco) text += ` (Troco para R$ ${troco})`;
             
             text += "%0A%0A*📍 DADOS DA ENTREGA:*%0A";
-            text += `*Nome:* ${name}%0A`;
-            text += `*Endereço:* ${address}%0A`;
-            if (obs) {
-                text += `*Observação:* ${obs}%0A`;
-            }
+            text += `*Nome:* ${name}%0A*Endereço:* ${address}%0A`;
+            if (obs) text += `*Observação:* ${obs}%0A`;
 
-            // Redirecionar pro WhatsApp
-            const url = `https://wa.me/${phone}?text=${text}`;
-            window.open(url, '_blank');
+            window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
         }
 
-        // Iniciar
-        renderMenu();
+        loadMenuFromSheet();
     </script>
 </body>
 </html>
