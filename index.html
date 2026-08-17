@@ -45,7 +45,6 @@
             letter-spacing: 1px;
         }
         
-        /* NOVO LAYOUT DO ITEM COM FOTO */
         .item { 
             display: flex; 
             background: var(--bg-card); 
@@ -55,7 +54,10 @@
             border: 1px solid #2a2a2a;
             gap: 15px;
             align-items: center;
+            cursor: pointer; /* Indica que é clicável */
+            transition: 0.2s;
         }
+        .item:active { transform: scale(0.98); }
         .item-img {
             width: 90px;
             height: 90px;
@@ -87,9 +89,7 @@
             border-radius: 6px; 
             font-weight: bold; 
             cursor: pointer; 
-            transition: 0.2s;
         }
-        .btn-add:active { transform: scale(0.95); }
         
         /* Carrinho Flutuante */
         .cart-bar { 
@@ -109,7 +109,7 @@
             z-index: 999;
         }
         
-        /* Modal do Carrinho */
+        /* Modais (Carrinho e Detalhes do Item) */
         .modal { 
             display: none; 
             position: fixed; 
@@ -128,19 +128,41 @@
             min-height: 100vh;
             padding: 20px; 
             box-sizing: border-box;
+            position: relative;
         }
         .close { 
-            float: right; 
+            position: absolute;
+            top: 15px;
+            right: 20px;
             font-size: 28px; 
             cursor: pointer; 
             color: var(--primary); 
             line-height: 1;
+            z-index: 10;
+            background: rgba(0,0,0,0.5);
+            padding: 0 10px;
+            border-radius: 50%;
+        }
+        
+        /* Adicionais */
+        .addon-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px dashed #333;
+        }
+        .addon-item label { 
+            margin: 0; color: #fff; font-size: 15px; display: flex; align-items: center; gap: 10px; cursor: pointer; 
+        }
+        .addon-item input[type="checkbox"] { 
+            width: 20px; height: 20px; accent-color: var(--primary); margin: 0;
         }
         
         .cart-item { 
             display: flex; 
             justify-content: space-between; 
-            align-items: center;
+            align-items: flex-start;
             margin-bottom: 15px; 
             border-bottom: 1px dashed #333; 
             padding-bottom: 15px; 
@@ -179,8 +201,10 @@
             border-radius: 8px; 
             font-weight: bold; 
             cursor: pointer; 
-            margin-top: 10px;
+            margin-top: 20px;
             margin-bottom: 40px;
+            position: sticky;
+            bottom: 10px;
         }
     </style>
 </head>
@@ -199,6 +223,32 @@
     <!-- Barra inferior do carrinho -->
     <div class="cart-bar" id="cart-bar" onclick="openCart()">
         🛒 Ver Pedido (<span id="cart-count">0</span>) - R$ <span id="cart-total-bar">0.00</span>
+    </div>
+
+    <!-- Modal Detalhes do Item (FOTO GRANDE E ADICIONAIS) -->
+    <div class="modal" id="item-modal">
+        <div class="modal-content" style="padding: 0;">
+            <span class="close" onclick="closeItem()">&times;</span>
+            <img id="detail-img" src="" style="width: 100%; height: 250px; object-fit: cover; border-bottom: 3px solid var(--primary);">
+            
+            <div style="padding: 20px;">
+                <h2 id="detail-name" style="margin: 0 0 10px 0; color: #fff;"></h2>
+                <p id="detail-desc" style="color: #94a3b8; font-size: 14px; line-height: 1.5; margin-bottom: 15px;"></p>
+                <h3 style="color: var(--success); margin: 0 0 20px 0;">R$ <span id="detail-price"></span></h3>
+
+                <h3 style="color: var(--primary); border-bottom: 1px solid #333; padding-bottom: 8px;">Turbine seu lanche! (Adicionais)</h3>
+                <div id="addons-list"></div>
+
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>Alguma observação?</label>
+                    <input type="text" id="detail-obs" placeholder="Ex: Tirar cebola, carne bem passada...">
+                </div>
+
+                <button class="btn-send" onclick="confirmItem()" id="btn-confirm-item">
+                    Adicionar - R$ <span id="detail-total-btn">0.00</span>
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Tela do Carrinho (Modal) -->
@@ -223,10 +273,6 @@
                 <label>Endereço Completo (Rua, Número, Bairro)</label>
                 <input type="text" id="c-address" placeholder="Ex: Rua A, 123 - Centro">
             </div>
-            <div class="form-group">
-                <label>Observação (Opcional)</label>
-                <input type="text" id="c-obs" placeholder="Ex: Tirar cebola, ponto da carne...">
-            </div>
             
             <h3 style="color: var(--primary); margin-top: 25px;">Pagamento</h3>
             <div class="form-group">
@@ -250,24 +296,30 @@
     <script>
         // CONFIGURAÇÕES INICIAIS
         const phone = "5586994466786"; 
-        
-        // 👉 COLE O ID DA SUA PLANILHA AQUI DENTRO DAS ASPAS
         const SHEET_ID = "1o-DiM4TXG8U--60V2oMdDYcngW9Lq9zEHsscflODR3Y"; 
+        
+        // 👉 SEUS ADICIONAIS FICAM AQUI! Pode colocar quantos quiser.
+        const adicionaisPadrao = [
+            { id: 'a1', nome: 'Bacon Extra', preco: 4.00 },
+            { id: 'a2', nome: 'Cheddar Cremoso', preco: 3.50 },
+            { id: 'a3', nome: 'Hambúrguer Extra 90g', preco: 8.00 },
+            { id: 'a4', nome: 'Ovo Frito', preco: 2.00 }
+        ];
         
         let menu = [];
         let cart = [];
+        let currentItemView = null; // Guarda o item que o cliente clicou para ver
+        let currentItemBasePrice = 0;
 
         async function loadMenuFromSheet() {
             if (SHEET_ID === "COLE_SEU_ID_AQUI") {
-                document.getElementById('menu-items').innerHTML = '<p style="text-align:center; color:#ef4444;">⚠️ Atenção Chefe! Você precisa colocar o ID da Planilha no código HTML.</p>';
+                document.getElementById('menu-items').innerHTML = '<p style="text-align:center; color:#ef4444;">⚠️ Atenção Chefe! Coloque o ID da Planilha.</p>';
                 return;
             }
-
             try {
                 const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
                 const response = await fetch(url);
                 const text = await response.text();
-                
                 const jsonStr = text.substring(47).slice(0, -2);
                 const data = JSON.parse(jsonStr);
                 const rows = data.table.rows;
@@ -275,29 +327,23 @@
                 
                 rows.forEach(row => {
                     if(!row.c[0] || row.c[0].v === null) return; 
-                    
                     const id = row.c[0].v;
                     const category = row.c[1] ? row.c[1].v : 'Gorillaz Menu';
                     const name = row.c[2] ? row.c[2].v : '';
                     const desc = row.c[3] ? row.c[3].v : '';
                     const price = row.c[4] ? parseFloat(row.c[4].v) : 0;
                     const disponivel = row.c[5] ? row.c[5].v : '';
-                    
-                    // 👉 NOVA COLUNA G (Índice 6) - LÊ A IMAGEM
-                    // Se não tiver imagem na planilha, ele usa uma imagem preta padrão
                     const img = row.c[6] ? row.c[6].v : 'https://via.placeholder.com/150/1e1e1e/f59e0b?text=Gorillaz';
                     
                     if(disponivel.toString().toUpperCase() === 'SIM') {
                         newMenu.push({ id, category, name, desc, price, img });
                     }
                 });
-                
                 menu = newMenu;
                 renderMenu();
-                
             } catch (error) {
                 console.error("Erro:", error);
-                document.getElementById('menu-items').innerHTML = '<p style="text-align:center; color:#ef4444;">Erro ao carregar o cardápio. Verifique se você publicou a planilha (Acesso Público).</p>';
+                document.getElementById('menu-items').innerHTML = '<p style="text-align:center; color:#ef4444;">Erro ao carregar o cardápio.</p>';
             }
         }
 
@@ -315,15 +361,16 @@
                     html += `<div class="category">${item.category}</div>`;
                     currentCategory = item.category;
                 }
+                // Agora o item inteiro é clicável e chama a tela de detalhes
                 html += `
-                    <div class="item">
+                    <div class="item" onclick="openItem(${item.id})">
                         <img src="${item.img}" class="item-img" alt="${item.name}">
                         <div class="item-info">
                             <h3>${item.name}</h3>
                             <p>${item.desc}</p>
                             <div class="price-row">
                                 <span class="price">R$ ${item.price.toFixed(2)}</span>
-                                <button class="btn-add" onclick="addToCart(${item.id}, event)">+ Add</button>
+                                <span style="font-size: 12px; color: var(--primary);">Ver Detalhes ➜</span>
                             </div>
                         </div>
                     </div>
@@ -332,27 +379,89 @@
             document.getElementById('menu-items').innerHTML = html;
         }
 
-        function addToCart(id, event) {
+        // 👉 LÓGICA DA TELA DE DETALHES DO ITEM E ADICIONAIS
+        function openItem(id) {
             const item = menu.find(i => i.id === id);
-            const cartItem = cart.find(i => i.id === id);
+            currentItemView = item;
+            currentItemBasePrice = item.price;
+
+            // Preenche os dados na tela
+            document.getElementById('detail-img').src = item.img;
+            document.getElementById('detail-name').innerText = item.name;
+            document.getElementById('detail-desc').innerText = item.desc;
+            document.getElementById('detail-price').innerText = item.price.toFixed(2);
+            document.getElementById('detail-obs').value = '';
+
+            // Renderiza os adicionais como checkboxes
+            let addonsHtml = '';
+            adicionaisPadrao.forEach((add, idx) => {
+                addonsHtml += `
+                    <div class="addon-item">
+                        <label>
+                            <input type="checkbox" class="addon-checkbox" value="${add.preco}" data-name="${add.nome}"> 
+                            ${add.nome}
+                        </label>
+                        <span class="addon-price">+ R$ ${add.preco.toFixed(2)}</span>
+                    </div>
+                `;
+            });
+            document.getElementById('addons-list').innerHTML = addonsHtml;
+
+            // Adiciona evento para calcular o total toda vez que clicar num adicional
+            document.querySelectorAll('.addon-checkbox').forEach(chk => {
+                chk.addEventListener('change', calculateItemTotal);
+            });
+
+            calculateItemTotal(); // Calcula total inicial
             
-            if (cartItem) cartItem.qtd++;
-            else cart.push({ ...item, qtd: 1 });
-            
-            updateCart();
-            
-            const btn = event.target;
-            const originalText = btn.innerText;
-            btn.innerText = "✓ Add";
-            btn.style.background = "#10b981";
-            btn.style.color = "white";
-            setTimeout(() => {
-                btn.innerText = originalText;
-                btn.style.background = "var(--primary)";
-                btn.style.color = "#000";
-            }, 1000);
+            document.getElementById('item-modal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
         }
 
+        function calculateItemTotal() {
+            let total = currentItemBasePrice;
+            document.querySelectorAll('.addon-checkbox:checked').forEach(chk => {
+                total += parseFloat(chk.value);
+            });
+            document.getElementById('detail-total-btn').innerText = total.toFixed(2);
+        }
+
+        function closeItem() {
+            document.getElementById('item-modal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        // CONFIRMAR ITEM PARA O CARRINHO
+        function confirmItem() {
+            let addons = [];
+            let addonTotal = 0;
+            
+            // Pega os adicionais marcados
+            document.querySelectorAll('.addon-checkbox:checked').forEach(chk => {
+                addons.push({ nome: chk.getAttribute('data-name'), preco: parseFloat(chk.value) });
+                addonTotal += parseFloat(chk.value);
+            });
+
+            let obs = document.getElementById('detail-obs').value.trim();
+            let precoFinal = currentItemBasePrice + addonTotal;
+
+            // Cria um item único para o carrinho (mesmo que seja o mesmo lanche, pode ter adicionais diferentes)
+            cart.push({
+                cartId: Date.now(), // ID único para não misturar lanches customizados
+                id: currentItemView.id,
+                name: currentItemView.name,
+                price: precoFinal,
+                basePrice: currentItemBasePrice,
+                qtd: 1,
+                addons: addons,
+                obs: obs
+            });
+
+            closeItem();
+            updateCart();
+        }
+
+        // 👉 ATUALIZAÇÃO DO CARRINHO
         function updateCart() {
             let count = 0; let total = 0;
             cart.forEach(item => { count += item.qtd; total += item.price * item.qtd; });
@@ -369,10 +478,20 @@
         function renderCartItems() {
             let html = '';
             cart.forEach((item, index) => {
+                // Formata os adicionais e observações para aparecerem no carrinho
+                let extrasHtml = '';
+                if(item.addons.length > 0) {
+                    extrasHtml += `<div style="font-size: 12px; color: var(--primary); margin-top: 4px;">+ ${item.addons.map(a => a.nome).join(', ')}</div>`;
+                }
+                if(item.obs) {
+                    extrasHtml += `<div style="font-size: 12px; color: #cbd5e1; font-style: italic;">Obs: ${item.obs}</div>`;
+                }
+
                 html += `
                     <div class="cart-item">
-                        <div>
+                        <div style="flex: 1; padding-right: 15px;">
                             <div style="font-weight: bold; color: #fff;">${item.name}</div>
+                            ${extrasHtml}
                             <div style="color: var(--success); font-weight: bold; margin-top: 5px;">
                                 R$ ${(item.price * item.qtd).toFixed(2)} 
                                 <span style="color: #64748b; font-size: 12px; font-weight: normal;">(R$ ${item.price.toFixed(2)} un)</span>
@@ -412,7 +531,6 @@
         function sendOrder() {
             const name = document.getElementById('c-name').value.trim();
             const address = document.getElementById('c-address').value.trim();
-            const obs = document.getElementById('c-obs').value.trim();
             const payment = document.getElementById('c-payment').value;
             const troco = document.getElementById('c-troco').value;
 
@@ -424,8 +542,15 @@
             let text = "🦍 *NOVO PEDIDO - GORILLAZ BURGUER* 🦍%0A%0A";
             text += "*🛒 ITENS DO PEDIDO:*%0A";
             let total = 0;
+            
             cart.forEach(item => {
-                text += `▪️ ${item.qtd}x ${item.name} - R$ ${(item.price * item.qtd).toFixed(2)}%0A`;
+                text += `▪️ *${item.qtd}x ${item.name}* - R$ ${(item.price * item.qtd).toFixed(2)}%0A`;
+                if(item.addons.length > 0) {
+                    text += `   ↳ _Extras: ${item.addons.map(a => a.nome).join(', ')}_%0A`;
+                }
+                if(item.obs) {
+                    text += `   ↳ _Obs: ${item.obs}_%0A`;
+                }
                 total += item.price * item.qtd;
             });
             
@@ -435,7 +560,6 @@
             
             text += "%0A%0A*📍 DADOS DA ENTREGA:*%0A";
             text += `*Nome:* ${name}%0A*Endereço:* ${address}%0A`;
-            if (obs) text += `*Observação:* ${obs}%0A`;
 
             window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
         }
