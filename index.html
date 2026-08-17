@@ -1,1567 +1,446 @@
 <!DOCTYPE html>
-<html lang="pt-PT">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gorillas - Sistema de Gestão Estratégica</title>
+    <title>Cardápio Digital - Gorillaz Burguer</title>
     <style>
         :root {
-            --primary: #1e293b;
-            --secondary: #3b82f6;
+            --primary: #f59e0b;
+            --bg-dark: #121212;
+            --bg-card: #1e1e1e;
+            --text-light: #f8fafc;
             --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --dark: #0f172a;
-            --bg: #f8fafc;
-            --text: #334155;
-            --card-bg: #ffffff;
         }
-        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-        
         body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: var(--bg-dark); 
+            color: var(--text-light); 
             margin: 0; 
-            background-color: var(--bg); 
-            color: var(--text); 
-            display: flex; 
-            height: 100vh; 
-            overflow: hidden; 
+            padding: 0; 
+            padding-bottom: 80px;
         }
-        
-        /* Menu Lateral (Desktop) */
-        .nav-side { 
-            width: 260px; 
-            background: white; 
-            border-right: 1px solid #e2e8f0; 
-            display: flex; 
-            flex-direction: column; 
-            z-index: 9999; 
-            box-shadow: 2px 0 10px rgba(0,0,0,0.03); 
-            overflow-y: auto; 
-        }
-        .nav-side-logo { 
-            padding: 25px 20px; 
-            font-size: 18px; 
-            font-weight: 900; 
-            color: var(--dark); 
+        header { 
+            background: #000; 
+            padding: 20px; 
             text-align: center; 
-            border-bottom: 1px solid #e2e8f0; 
-            background: #f1f5f9; 
+            border-bottom: 3px solid var(--primary); 
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        header h1 { margin: 0; color: var(--primary); font-size: 24px;}
+        header p { margin: 5px 0 0 0; color: #aaa; font-size: 14px;}
+        
+        .container { max-width: 600px; margin: 0 auto; padding: 15px; }
+        
+        .category { 
+            font-size: 1.2em; 
+            font-weight: bold; 
+            margin-top: 25px; 
+            border-bottom: 1px solid #333; 
+            padding-bottom: 8px; 
+            color: var(--primary); 
+            text-transform: uppercase;
             letter-spacing: 1px;
         }
         
-        /* Seletor Multi-Lojas */
-        .store-selector-container {
+        /* NOVO LAYOUT DO ITEM COM FOTO */
+        .item { 
+            display: flex; 
+            background: var(--bg-card); 
             padding: 15px; 
-            border-bottom: 1px solid #e2e8f0; 
-            background: #f8fafc;
+            margin-top: 12px; 
+            border-radius: 8px; 
+            border: 1px solid #2a2a2a;
+            gap: 15px;
+            align-items: center;
         }
-        .store-selector-container label {
-            font-size: 11px; 
-            margin-top: 0; 
-            color: #64748b; 
-            text-transform: uppercase;
+        .item-img {
+            width: 90px;
+            height: 90px;
+            border-radius: 8px;
+            object-fit: cover;
+            background-color: #333;
+            flex-shrink: 0;
         }
-        .store-selector-container select {
-            margin-top: 5px; 
-            padding: 8px; 
-            font-size: 13px; 
-            font-weight: bold; 
-            color: var(--primary); 
-            width: 100%; 
-            border-radius: 4px; 
-            border: 1px solid #cbd5e1; 
-            cursor: pointer;
+        .item-info { flex: 1; }
+        .item-info h3 { margin: 0 0 5px 0; font-size: 16px; color: #fff;}
+        .item-info p { 
+            margin: 0; font-size: 13px; color: #94a3b8; line-height: 1.4; 
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
         }
         
-        .nav-btn { 
-            width: 100%; 
-            padding: 16px 20px; 
-            background: none; 
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .price { font-weight: bold; color: var(--success); font-size: 16px;}
+        
+        .btn-add { 
+            background: var(--primary); 
+            color: #000; 
             border: none; 
-            border-left: 4px solid transparent; 
-            font-size: 14px; 
-            color: #64748b; 
+            padding: 8px 15px; 
+            border-radius: 6px; 
             font-weight: bold; 
             cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            text-align: left; 
-            transition: all 0.2s; 
+            transition: 0.2s;
         }
-        .nav-btn:hover { 
-            background: #f8fafc; 
-            color: var(--primary); 
-        }
-        .nav-btn.active { 
-            color: var(--secondary); 
-            border-left: 4px solid var(--secondary); 
-            background-color: #eff6ff; 
-        }
-        .nav-icon { 
-            font-size: 20px; 
-            margin-right: 15px; 
-            width: 25px; 
-            text-align: center; 
-        }
-
-        /* Área Principal de Conteúdo */
-        .main-content { 
-            flex: 1; 
-            display: flex; 
-            flex-direction: column; 
-            overflow-y: auto; 
-            background-color: var(--bg); 
-        }
+        .btn-add:active { transform: scale(0.95); }
         
-        /* Cabeçalho */
-        header { 
-            background: var(--primary); 
-            color: white; 
-            padding: 20px; 
-            text-align: center; 
-            font-size: 22px; 
-            font-weight: bold; 
-            position: sticky; 
-            top: 0; 
-            z-index: 9998; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
-        }
-
-        /* Telas */
-        .screen { 
-            display: none; 
-            padding: 30px; 
-            animation: fadeIn 0.3s ease; 
-            max-width: 1200px; 
-            margin: 0 auto; 
+        /* Carrinho Flutuante */
+        .cart-bar { 
+            position: fixed; 
+            bottom: 0; 
             width: 100%; 
+            background: var(--primary); 
+            color: #000; 
+            padding: 18px; 
+            text-align: center; 
+            font-weight: bold; 
+            cursor: pointer; 
+            box-sizing: border-box; 
+            font-size: 1.1em; 
+            display: none; 
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.3);
+            z-index: 999;
         }
-        .screen.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* Cartões & Formulários */
-        .card { background: var(--card-bg); padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .card-header { font-weight: bold; font-size: 18px; margin-bottom: 15px; color: var(--primary); border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
         
-        label { display: block; font-size: 13px; margin-top: 12px; color: #64748b; font-weight: bold; }
-        input, select { width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; background: #f8fafc; }
-        input:focus, select:focus { outline: none; border-color: var(--secondary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        /* Modal do Carrinho */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.85); 
+            z-index: 1000; 
+            overflow-y: auto;
+        }
+        .modal-content { 
+            background: var(--bg-card); 
+            max-width: 500px; 
+            margin: 0 auto; 
+            min-height: 100vh;
+            padding: 20px; 
+            box-sizing: border-box;
+        }
+        .close { 
+            float: right; 
+            font-size: 28px; 
+            cursor: pointer; 
+            color: var(--primary); 
+            line-height: 1;
+        }
         
-        /* Botões */
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 15px; color: white; transition: background 0.2s; }
-        .btn-add { background: var(--secondary); }
-        .btn-add:hover { background: #2563eb; }
-        .btn-success { background: var(--success); }
-        .btn-danger { background: var(--danger); padding: 8px 12px; width: auto; font-size: 13px; cursor: pointer; border: none; border-radius: 6px; color: white; transition: background 0.2s;}
-        .btn-danger:hover { background: #dc2626; }
-        .btn-small { background: #e2e8f0; color: var(--text); width: auto; padding: 10px 15px; margin-top: 0; border: none; border-radius: 6px; cursor: pointer;}
-        .btn-small:hover { background: #cbd5e1; }
-
-        /* Destaques e Widgets */
-        .highlight { font-size: 24px; font-weight: bold; color: var(--success); margin: 8px 0; }
-        .row { display: flex; gap: 20px; align-items: flex-start; }
-        .col { flex: 1; }
+        .cart-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            margin-bottom: 15px; 
+            border-bottom: 1px dashed #333; 
+            padding-bottom: 15px; 
+        }
+        .cart-controls button {
+            padding: 8px 12px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
         
-        .widget { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 15px; }
-        .widget-title { font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
-        .widget-value { font-size: 24px; font-weight: bold; color: var(--dark); margin-top: 8px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 14px; color: #cbd5e1; }
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            border-radius: 6px; 
+            border: 1px solid #475569; 
+            background: #0f172a; 
+            color: white; 
+            box-sizing: border-box;
+            font-size: 16px;
+        }
         
-        /* Listas */
-        .list-item { border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 12px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
-        .list-title { font-weight: bold; font-size: 16px; display: flex; justify-content: space-between; align-items: center;}
-        .list-subtitle { font-size: 13px; color: #64748b; margin-top: 6px; }
-        
-        /* Lotes no Inventário */
-        .lote-box { background: #f8fafc; border: 1px dashed #cbd5e1; padding: 12px; border-radius: 6px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; }
-        
-        /* Tabela Cotações */
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-        th { background-color: #f1f5f9; color: #475569; font-weight: bold; }
-        .cheapest { background-color: #dcfce7; color: #0369a1; font-weight: bold; border-left: 3px solid #0284c7; }
+        .btn-send { 
+            background: var(--success); 
+            color: white; 
+            border: none; 
+            width: 100%; 
+            padding: 18px; 
+            font-size: 1.1em; 
+            border-radius: 8px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-top: 10px;
+            margin-bottom: 40px;
+        }
     </style>
-    <!-- Módulos do Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
-
-    <nav class="nav-side">
-        <div class="nav-side-logo">🦍 GORILLAS ERP</div>
-        
-        <div class="store-selector-container">
-            <label>Loja Ativa</label>
-            <div style="display: flex; gap: 8px; margin-top: 5px;">
-                <select id="store-selector" onchange="trocarLoja(this.value)" style="margin-top: 0; flex: 1;"></select>
-                <button class="btn-small" style="margin: 0; padding: 8px 12px; background: #f59e0b; color: white;" onclick="editarNomeLoja()" title="Editar Nome da Loja">✏️</button>
-            </div>
-            <button class="btn-small" style="width: 100%; margin-top: 10px; font-size: 12px; background: #e2e8f0; font-weight: bold; border: 1px dashed #94a3b8;" onclick="novaLoja()">➕ Criar / Duplicar Loja</button>
+    <header>
+        <h1>🦍 GORILLAZ BURGUER</h1>
+        <p>O melhor delivery de Parnaíba!</p>
+    </header>
+    
+    <div class="container">
+        <div id="menu-items">
+            <p style="text-align: center; color: var(--primary); font-weight: bold;">Carregando cardápio direto da cozinha...</p>
         </div>
+    </div>
 
-        <button class="nav-btn active" onclick="mudarTela('dashboard', 'SALA DE GUERRA', this)"><span class="nav-icon">🏠</span>Dash Operacional</button>
-        <button class="nav-btn" onclick="mudarTela('inventario', 'INVENTÁRIO / LOTES', this)"><span class="nav-icon">📦</span>Gestão de Lotes</button>
-        <button class="nav-btn" onclick="mudarTela('prep', 'MISE EN PLACE', this)"><span class="nav-icon">🔪</span>Mise en Place</button>
-        <button class="nav-btn" onclick="mudarTela('dna', 'Gestão & DNA', this)"><span class="nav-icon">📊</span>DNA do Negócio</button>
-        <button class="nav-btn" onclick="mudarTela('insumos', 'Base de Insumos', this)"><span class="nav-icon">🛒</span>Insumos Padrão</button>
-        <button class="nav-btn" onclick="mudarTela('fichas', 'Fichas', this)"><span class="nav-icon">📋</span>Fichas Técnicas</button>
-        <button class="nav-btn" onclick="mudarTela('combos', 'Combos (Estratégia)', this)"><span class="nav-icon">🍱</span>Engenharia de Combos</button>
-        <button class="nav-btn" onclick="mudarTela('precos', 'Precificação', this)"><span class="nav-icon">💰</span>Precificação</button>
-        <button class="nav-btn" onclick="mudarTela('lista', 'Compras', this)"><span class="nav-icon">📝</span>Lista de Compras</button>
-        <button class="nav-btn" onclick="mudarTela('caixa', 'Caixa (Banco)', this)"><span class="nav-icon">💵</span>Fechamento de Caixa</button>
-    </nav>
+    <!-- Barra inferior do carrinho -->
+    <div class="cart-bar" id="cart-bar" onclick="openCart()">
+        🛒 Ver Pedido (<span id="cart-count">0</span>) - R$ <span id="cart-total-bar">0.00</span>
+    </div>
 
-    <div class="main-content">
-        
-        <header id="header-title">SALA DE GUERRA</header>
-
-        <div id="tela-dashboard" class="screen active">
-            <div class="card" style="background: var(--dark); color: white;">
-                <div class="card-header" style="color: white; border-bottom: 1px solid #334155;">Resumo Operacional (Hoje)</div>
-                
-                <div id="alerta-validade" style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; font-size: 14px; padding: 15px; border-radius: 6px; display: none; margin-bottom: 20px;">
-                    <div style="font-weight: bold; margin-bottom: 5px; font-size: 15px;">⚠️ ALERTA: Lotes c/ Vencimento Próximo</div>
-                    <div id="lista-alertas-validade"></div>
-                </div>
-
-                <div class="row">
-                    <div class="col widget" style="background: #1e293b; border-color: #334155;">
-                        <div class="widget-title" style="color: #94a3b8;">Caixa do Dia</div>
-                        <div class="widget-value" style="color: var(--success);" id="dash-caixa-dia">R$ 0.00</div>
-                    </div>
-                    <div class="col widget" style="background: #1e293b; border-color: #334155;">
-                        <div class="widget-title" style="color: #94a3b8;">Status Prep.</div>
-                        <div class="widget-value" id="dash-prep-status" style="color: white;">0/0</div>
-                    </div>
-                </div>
-                <div id="alerta-prep" style="background: var(--danger); color: white; font-size: 14px; font-weight: bold; text-align: center; padding: 10px; border-radius: 4px; display: none; margin-top: 10px;">
-                    ATENÇÃO: Existem tarefas de Mise en Place pendentes!
-                </div>
+    <!-- Tela do Carrinho (Modal) -->
+    <div class="modal" id="cart-modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCart()">&times;</span>
+            <h2 style="color: var(--primary); margin-top: 0;">Seu Pedido</h2>
+            
+            <div id="cart-items-list"></div>
+            
+            <h3 style="display: flex; justify-content: space-between; border-bottom: 2px solid #333; padding-bottom: 10px;">
+                <span>Total:</span> 
+                <span style="color: var(--success);">R$ <span id="cart-total-modal">0.00</span></span>
+            </h3>
+            
+            <h3 style="color: var(--primary); margin-top: 25px;">Para Onde Vamos Mandar?</h3>
+            <div class="form-group">
+                <label>Seu Nome</label>
+                <input type="text" id="c-name" placeholder="Como devemos te chamar?">
             </div>
-
-            <div class="card">
-                <div class="card-header">Desempenho Financeiro (Mês Atual)</div>
-                <div class="row">
-                    <div class="col widget">
-                        <div class="widget-title">Entradas Líquidas</div>
-                        <div class="widget-value" style="color: var(--success);" id="dash-mes-entradas">R$ 0.00</div>
-                    </div>
-                    <div class="col widget">
-                        <div class="widget-title">Despesas Totais</div>
-                        <div class="widget-value" style="color: var(--danger);" id="dash-mes-saidas">R$ 0.00</div>
-                    </div>
-                </div>
-                <div class="widget" style="background: #e0f2fe; border-color: #bae6fd;">
-                    <div class="widget-title" style="color: #0284c7;">Saldo Acumulado no Mês</div>
-                    <div class="widget-value" style="color: #0369a1;" id="dash-mes-saldo">R$ 0.00</div>
-                </div>
+            <div class="form-group">
+                <label>Endereço Completo (Rua, Número, Bairro)</label>
+                <input type="text" id="c-address" placeholder="Ex: Rua A, 123 - Centro">
+            </div>
+            <div class="form-group">
+                <label>Observação (Opcional)</label>
+                <input type="text" id="c-obs" placeholder="Ex: Tirar cebola, ponto da carne...">
             </div>
             
-            <div class="card" style="border-left: 4px solid var(--secondary);">
-                <div class="card-header" style="color: var(--secondary);">Saúde do Negócio (DNA)</div>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 15px; color: #64748b;">Custo Fixo + Impostos + Taxas:</span>
-                    <span id="dash-dna-total" style="font-weight: bold; color: var(--secondary); font-size: 22px;">0.00%</span>
-                </div>
+            <h3 style="color: var(--primary); margin-top: 25px;">Pagamento</h3>
+            <div class="form-group">
+                <label>Forma de Pagamento na Entrega</label>
+                <select id="c-payment">
+                    <option value="PIX">PIX</option>
+                    <option value="Cartão de Crédito">Cartão de Crédito</option>
+                    <option value="Cartão de Débito">Cartão de Débito</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                </select>
             </div>
+            <div class="form-group" id="troco-div" style="display:none;">
+                <label>Precisa de troco para quanto?</label>
+                <input type="number" id="c-troco" placeholder="Ex: 50">
+            </div>
+
+            <button class="btn-send" onclick="sendOrder()">Enviar Pedido no WhatsApp 📱</button>
         </div>
-
-        <div id="tela-inventario" class="screen">
-            <div class="card">
-                <div class="card-header" style="color: var(--secondary);">Inventário e Lotes (Fechamento)</div>
-                <p style="font-size: 13px; color: #64748b; margin-top: 0; margin-bottom: 20px;">Apague os lotes que já acabaram fisicamente na sua geladeira.</p>
-                <div id="lista-inventario-container"></div>
-            </div>
-        </div>
-
-        <div id="tela-prep" class="screen">
-            <div class="card">
-                <div class="card-header">Mise en Place (Linha de Montagem)</div>
-                <label>Tarefa de Preparação</label>
-                <input type="text" id="prep-nome" placeholder="Ex: Fritar bacon, Cortar cebola">
-                <div style="display: flex; gap: 15px; margin-top: 20px;">
-                    <button id="btn-salvar-prep" class="btn btn-add" style="margin-top: 0; background: var(--dark);" onclick="addPrep()">+ Adicionar Tarefa</button>
-                    <button id="btn-cancelar-prep" class="btn btn-danger" style="display: none; margin-top: 0; width: 30%;" onclick="cancelarEdicaoPrep()">Cancelar</button>
-                </div>
-            </div>
-            <div class="card" style="background: #f8fafc;">
-                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>Fila de Execução</span>
-                </div>
-                <div id="lista-prep-container"></div>
-            </div>
-        </div>
-
-        <div id="tela-dna" class="screen">
-            <div class="card">
-                <div class="card-header">1. Faturamento Mensal</div>
-                <label>Média Faturamento Bruto (R$)</label>
-                <input type="number" id="dna-faturamento" onchange="calcDNA()" placeholder="Ex: 5000">
-            </div>
-            <div class="card" style="border-left: 4px solid var(--danger);">
-                <div class="card-header" style="color: var(--danger);">2. Custos Fixos Detalhados</div>
-                <div class="row">
-                    <div class="col" style="flex: 2;"><input type="text" id="despesa-nome" placeholder="Conta (Luz, Adilson)"></div>
-                    <div class="col"><input type="number" id="despesa-valor" placeholder="R$ 150.00"></div>
-                </div>
-                <button class="btn btn-small" style="background: var(--danger); color: white; width: auto; margin-top: 15px; padding: 12px 20px;" onclick="addDespesa()">+ Lançar Conta</button>
-                <div id="lista-despesas" style="margin-top: 20px; border-top: 1px dashed #ccc; padding-top: 15px;"></div>
-                <div style="background: #fef2f2; padding: 15px; border-radius: 6px; margin-top: 20px; border: 1px solid #fecaca;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 15px; color: #991b1b; font-weight: bold;">Soma das Contas:</span>
-                        <span id="res-despesas-total" style="font-weight: bold; color: #b91c1c; font-size: 20px;">R$ 0.00</span>
-                    </div>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-header">3. Taxas e Impostos (%)</div>
-                <div class="row">
-                    <div class="col"><label>Taxa Cartão Média (%)</label><input type="number" id="dna-cartao" onchange="calcDNA()"></div>
-                    <div class="col"><label>Marketing (%)</label><input type="number" id="dna-mkt" onchange="calcDNA()"></div>
-                </div>
-                <div class="row" style="margin-top: 15px;">
-                    <div class="col"><label>Impostos (%)</label><input type="number" id="dna-imposto" onchange="calcDNA()"></div>
-                    <div class="col"><label>Taxa iFood (%)</label><input type="number" id="dna-ifood" onchange="calcDNA()"></div>
-                </div>
-            </div>
-            <div class="card" style="background: #eff6ff; border: 1px solid #bfdbfe;">
-                <div class="card-header" style="color: #1d4ed8;">Seu DNA Completo (%)</div>
-                <div class="highlight" style="font-size: 38px; text-align: center; margin-top: 15px;" id="res-dna">0.00%</div>
-            </div>
-        </div>
-
-        <div id="tela-insumos" class="screen">
-            <div class="card">
-                <div class="card-header">Cadastrar/Editar Insumo</div>
-                <label>Nome do Insumo</label>
-                <input type="text" id="insumo-nome" placeholder="Ex: Carne Moída (Blend)">
-                <div class="row">
-                    <div class="col">
-                        <label>Preço Pago (R$)</label>
-                        <input type="number" id="insumo-preco" placeholder="Ex: 25.00">
-                    </div>
-                    <div class="col">
-                        <label>Medida Compra</label>
-                        <select id="insumo-medida">
-                            <option value="KG">Quilo (KG)</option>
-                            <option value="GR">Grama (GR)</option>
-                            <option value="L">Litro (L)</option>
-                            <option value="ML">Mililitro (ML)</option>
-                            <option value="UN">Unidade (UN)</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col">
-                        <label>Quantidade que vem</label>
-                        <input type="number" id="insumo-qtd" placeholder="Ex: 5 (para 5kg)">
-                    </div>
-                    <div class="col">
-                        <label>Validade Deste Lote</label>
-                        <input type="date" id="insumo-validade">
-                    </div>
-                </div>
-                <div style="display: flex; gap: 15px; margin-top: 20px;">
-                    <button id="btn-salvar-insumo" class="btn btn-add" style="margin-top: 0;" onclick="addInsumo()">+ Salvar Insumo</button>
-                    <button id="btn-cancelar-insumo" class="btn btn-danger" style="display: none; margin-top: 0; width: 30%;" onclick="cancelarEdicaoInsumo()">Cancelar</button>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-header">Insumos Cadastrados no Banco</div>
-                <div id="lista-insumos"></div>
-            </div>
-        </div>
-
-        <div id="tela-fichas" class="screen">
-            <div class="card">
-                <div class="card-header">Criar/Editar Ficha Técnica</div>
-                <label>Nome do Produto/Receita</label>
-                <input type="text" id="ficha-nome" placeholder="Ex: Hambúrguer Clássico">
-                <div class="row">
-                    <div class="col">
-                        <label>Tipo</label>
-                        <select id="ficha-tipo">
-                            <option value="produto">Produto Final (Venda)</option>
-                            <option value="receita">Receita (Manipulação)</option>
-                        </select>
-                    </div>
-                    <div class="col">
-                        <label>Rendimento</label>
-                        <input type="number" id="ficha-rendimento" value="1" placeholder="Rende quantos?">
-                    </div>
-                </div>
-                <div style="display: flex; gap: 15px; margin-top: 15px;">
-                    <button id="btn-salvar-ficha" class="btn btn-add" style="margin-top: 0;" onclick="addFicha()">+ Criar Ficha</button>
-                    <button id="btn-cancelar-ficha" class="btn btn-danger" style="display: none; margin-top: 0; width: 30%;" onclick="cancelarEdicaoFicha()">Cancelar</button>
-                </div>
-            </div>
-            <div id="lista-fichas-container"></div>
-        </div>
-
-        <div id="tela-combos" class="screen">
-            <div class="card">
-                <div class="card-header">Montar/Editar Combo Promocional</div>
-                <label>Nome do Combo</label>
-                <input type="text" id="combo-nome" placeholder="Ex: Combo Queima de Estoque">
-                
-                <div style="background: #f1f5f9; padding: 15px; border-radius: 6px; margin: 20px 0; border: 1px solid #cbd5e1;">
-                    <div style="font-size: 14px; font-weight: bold; color: var(--primary); margin-bottom: 5px;">🔥 Engenharia de Preço (Controle de Custos)</div>
-                    <p style="font-size: 12px; color: #64748b; margin-top: 0; line-height: 1.4;">Escolha cirurgicamente quais contas fixas você quer REMOVER da cobrança deste combo.</p>
-                    
-                    <div id="combo-custos-dinamicos" style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #cbd5e1;"></div>
-
-                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: normal; color: var(--dark); cursor: pointer;">
-                        <input type="checkbox" id="combo-isenta-mkt" style="width: 18px; height: 18px; margin: 0;"> 
-                        Também isentar a Taxa de Marketing (%)
-                    </label>
-                </div>
-
-                <div style="display: flex; gap: 15px; margin-top: 20px;">
-                    <button id="btn-salvar-combo" class="btn btn-add" style="background: #8b5cf6; margin-top: 0;" onclick="addCombo()">+ Criar Combo</button>
-                    <button id="btn-cancelar-combo" class="btn btn-danger" style="display: none; margin-top: 0; width: 30%;" onclick="cancelarEdicaoCombo()">Cancelar</button>
-                </div>
-            </div>
-            <div id="lista-combos-container"></div>
-        </div>
-
-        <div id="tela-precos" class="screen">
-            <div class="card">
-                <div class="card-header">Simulador de Preços Estratégico</div>
-                <label>Selecione o Produto ou Combo</label>
-                <select id="simula-produto" onchange="selecionarProdutoSimulador()"></select>
-                
-                <div id="simula-dna-info" style="font-size: 13px; color: #d97706; font-weight: bold; text-align: center; margin: 15px 0; padding: 10px; background: #fef3c7; border-radius: 4px; display: none;">
-                    DNA Padrão aplicado
-                </div>
-
-                <div class="row">
-                    <div class="col"><label>Custo Base (CMV)</label><input type="text" id="simula-cmv" disabled></div>
-                    <div class="col"><label>Lucro Desejado (%)</label><input type="number" id="simula-lucro" value="20" onchange="simularPreco()"></div>
-                </div>
-                <label>Taxa Extra Embutida (Ex: Motoboy) (R$)</label>
-                <input type="number" id="simula-extra" value="0" onchange="simularPreco()">
-
-                <div class="row" style="margin-top: 25px; gap: 15px;">
-                    <div class="col" style="background: #f1f5f9; padding: 15px; border-radius: 6px; text-align: center;">
-                        <div style="font-size: 12px; color: #475569; font-weight: bold;">BALCÃO / RETIRADA</div>
-                        <div class="highlight" id="simula-pv-balcao" style="color: #334155; font-size: 20px; margin-top: 8px;">R$ 0.00</div>
-                    </div>
-                    <div class="col" style="background: #e0f2fe; padding: 15px; border-radius: 6px; text-align: center;">
-                        <div style="font-size: 12px; color: #0284c7; font-weight: bold;">DELIVERY DIRETO</div>
-                        <div class="highlight" id="simula-pv-direto" style="color: #0369a1; font-size: 20px; margin-top: 8px;">R$ 0.00</div>
-                    </div>
-                    <div class="col" style="background: #fce7f3; padding: 15px; border-radius: 6px; text-align: center;">
-                        <div style="font-size: 12px; color: #be185d; font-weight: bold;">VENDA IFOOD</div>
-                        <div class="highlight" id="simula-pv-ifood" style="color: #be185d; font-size: 20px; margin-top: 8px;">R$ 0.00</div>
-                    </div>
-                </div>
-                <button class="btn" style="background: #10b981; margin-top: 20px;" onclick="salvarPrecoAtual()">💾 Salvar Preços no Cardápio</button>
-            </div>
-
-            <div class="card" style="background: #f8fafc; border: 1px solid #e2e8f0;">
-                <div class="card-header" style="color: #0f172a; display: flex; justify-content: space-between; align-items: center;">
-                    <span>📋 Meu Cardápio Salvo</span>
-                    <button class="btn-danger" style="margin: 0; padding: 6px 12px; font-size: 12px;" onclick="limparCardapio()">Limpar Tudo</button>
-                </div>
-                <div id="lista-precos-salvos"></div>
-            </div>
-
-            <div class="card" style="border-left: 4px solid #f59e0b;">
-                <div class="card-header" style="color: #d97706;">Auditoria de Lucro (Raio-X)</div>
-                <label>Selecione o Produto para Auditoria</label>
-                <select id="raio-produto" onchange="calcRaioX()"></select>
-                <label>Preço Atual cobrado (R$)</label>
-                <input type="number" id="raio-preco" onchange="calcRaioX()" placeholder="Ex: 25.00">
-                <div class="row" style="margin-top: 20px;">
-                    <div class="col" style="text-align: center; border-right: 1px solid #eee;">
-                        <span style="font-size: 13px; font-weight: bold; color: #0284c7;">Venda Física/Direto</span>
-                        <div id="raio-rs-direto" style="font-weight: bold; font-size: 22px; margin-top: 10px;">R$ 0.00</div>
-                        <div id="raio-porc-direto" style="font-size: 12px; color: #64748b; margin-top: 5px;">Margem: 0%</div>
-                    </div>
-                    <div class="col" style="text-align: center;">
-                        <span style="font-size: 13px; font-weight: bold; color: #be185d;">Venda iFood</span>
-                        <div id="raio-rs-ifood" style="font-weight: bold; font-size: 22px; margin-top: 10px;">R$ 0.00</div>
-                        <div id="raio-porc-ifood" style="font-size: 12px; color: #64748b; margin-top: 5px;">Margem: 0%</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="tela-lista" class="screen">
-            <div class="card">
-                <div class="card-header">Adicionar/Editar Carrinho</div>
-                <label style="color: var(--secondary);">Vincular ao Estoque (Cria Novo Lote)</label>
-                <select id="compra-insumo" onchange="vincularInsumoCompra()"></select>
-                <label style="margin-top: 20px;">Ou digite item avulso</label>
-                <div class="row">
-                    <div class="col" style="flex: 2;"><input type="text" id="compra-nome" placeholder="Ex: Detergente"></div>
-                    <div class="col"><input type="text" id="compra-qtd" placeholder="Ex: 2 un"></div>
-                </div>
-                <div style="display: flex; gap: 15px; margin-top: 20px;">
-                    <button id="btn-salvar-compra" class="btn btn-add" style="margin-top: 0;" onclick="addCompra()">+ Adicionar na Lista</button>
-                    <button id="btn-cancelar-compra" class="btn btn-danger" style="display: none; margin-top: 0; width: 30%;" onclick="cancelarEdicaoCompra()">Cancelar</button>
-                </div>
-            </div>
-            <div class="card" style="background: #f8fafc;">
-                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>Itens para Comprar</span>
-                    <button class="btn-small" style="margin:0; font-size:12px;" onclick="limparComprasConcluidas()">Limpar Comprados</button>
-                </div>
-                <div id="lista-de-compras-container"></div>
-            </div>
-        </div>
-
-        <div id="tela-caixa" class="screen">
-            
-            <div class="card" style="border-left: 4px solid var(--success); background: #f0fdf4;">
-                <div class="card-header" style="color: var(--success);">💳 Saldo Real (Conta/Gaveta)</div>
-                <p style="font-size: 13px; color: #64748b; margin-top: 0;">O que você tem HOJE de dinheiro vivo e na conta bancária. (Ignora repasses futuros do iFood).</p>
-                <div class="highlight" id="saldo-bancario-total" style="font-size: 38px; text-align: center; color: #047857;">R$ 0.00</div>
-                <button class="btn-small" style="width: 100%; margin-top: 15px; background: #e2e8f0; color: #334155; font-weight: bold; font-size: 15px; padding: 12px;" onclick="calibrarSaldoBancario()">⚖️ Informar Saldo Atual (Ex: R$ 300)</button>
-            </div>
-
-            <div class="card">
-                <div class="card-header">Lançamento Diário</div>
-                <label>Data</label>
-                <input type="date" id="caixa-data">
-                
-                <h4 style="margin: 25px 0 10px; color: var(--secondary); border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Investimento e Retirada (Do seu bolso)</h4>
-                <div class="row">
-                    <div class="col">
-                        <label style="color: #0284c7;">Aporte (Coloquei) R$</label>
-                        <input type="number" id="caixa-aporte" placeholder="0.00">
-                    </div>
-                    <div class="col">
-                        <label style="color: #be185d;">Sangria (Tirei) R$</label>
-                        <input type="number" id="caixa-sangria" placeholder="0.00">
-                    </div>
-                </div>
-
-                <h4 style="margin: 25px 0 10px; color: var(--success); border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Entradas Operacionais (Valores Líquidos)</h4>
-                <div class="row">
-                    <div class="col"><label>Dinheiro/PIX</label><input type="number" id="caixa-pix" placeholder="0.00"></div>
-                    <div class="col"><label>Cartão (Já s/ taxa)</label><input type="number" id="caixa-cartao" placeholder="0.00"></div>
-                </div>
-                <label>Vendas iFood (Valor exato do portal)</label>
-                <input type="number" id="caixa-ifood" placeholder="0.00">
-                
-                <h4 style="margin: 25px 0 10px; color: var(--danger); border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Saídas Operacionais</h4>
-                <div class="row">
-                    <div class="col"><label>Motoboy</label><input type="number" id="caixa-motoboy" placeholder="0.00"></div>
-                    <div class="col"><label>Compras</label><input type="number" id="caixa-compras" placeholder="0.00"></div>
-                </div>
-                <button id="btn-salvar-caixa" class="btn btn-add" onclick="addCaixa()">+ Salvar Fechamento</button>
-                <button id="btn-cancelar-caixa" class="btn btn-danger" style="display: none; margin-top: 15px; width: 100%;" onclick="cancelarEdicaoCaixa()">Cancelar Edição</button>
-            </div>
-
-            <div class="card" style="background: #f8fafc;">
-                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="color: var(--primary);">Resumo do Mês (Visão Contábil)</span>
-                    <input type="month" id="filtro-mes" onchange="renderCaixa()" style="width: auto; margin: 0; padding: 8px; font-size: 14px;">
-                </div>
-                <button class="btn btn-small" onclick="limparFiltroCaixa()" style="width: 100%; font-size: 13px; margin-bottom: 20px;">Ver Histórico Completo</button>
-                
-                <div class="row" style="text-align: center; margin-bottom: 20px;">
-                    <div class="col"><span style="font-size: 13px; color: #64748b;">Entradas Gerais</span><div id="resumo-entradas" style="color: var(--success); font-weight: bold; font-size: 20px;">R$ 0.00</div></div>
-                    <div class="col"><span style="font-size: 13px; color: #64748b;">Saídas Gerais</span><div id="resumo-saidas" style="color: var(--danger); font-weight: bold; font-size: 20px;">R$ 0.00</div></div>
-                    <div class="col" style="border-left: 1px solid #e2e8f0;"><span style="font-size: 13px; color: #64748b;">Saldo Final</span><div id="resumo-saldo" style="font-weight: bold; font-size: 20px;">R$ 0.00</div></div>
-                </div>
-            </div>
-            <div id="lista-caixa"></div>
-        </div>
-
     </div>
 
     <script>
-        // --- ☁️ CONFIGURAÇÃO DA NUVEM (FIREBASE) ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyA5oTLxYfcCpjC-4KUdl4P4S62f8uUWeqE",
-            authDomain: "gorillaz-burguer.firebaseapp.com",
-            databaseURL: "https://gorillaz-burguer-default-rtdb.firebaseio.com",
-            projectId: "gorillaz-burguer",
-            storageBucket: "gorillaz-burguer.firebasestorage.app",
-            messagingSenderId: "1026686913803",
-            appId: "1:1026686913803:web:5ae4e74aa85378716fe60e",
-            measurementId: "G-5F1BZMPL5L"
-        };
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const database = firebase.database();
-        // -------------------------------------------
+        // CONFIGURAÇÕES INICIAIS
+        const phone = "5586994466786"; 
+        
+        // 👉 COLE O ID DA SUA PLANILHA AQUI DENTRO DAS ASPAS
+        const SHEET_ID = "1o-DiM4TXG8U--60V2oMdDYcngW9Lq9zEHsscflODR3Y"; 
+        
+        let menu = [];
+        let cart = [];
 
-        function getDataLocal() {
-            const data = new Date();
-            const offset = data.getTimezoneOffset() * 60000;
-            return new Date(data.getTime() - offset).toISOString().split('T')[0];
-        }
-
-        function calcDiasVencimento(dataString) {
-            if(!dataString) return null;
-            let hoje = new Date(); hoje.setHours(0,0,0,0);
-            let val = new Date(dataString + "T00:00:00");
-            return Math.ceil((val - hoje) / (1000 * 60 * 60 * 24));
-        }
-
-        // --- SISTEMA MULTI-LOJAS ---
-        let db;
-        let lojas = [];
-        let currentStoreId = 'default';
-
-        function initMultiStore() {
-            let storesSalvas = localStorage.getItem('gorillas_stores');
-            if (storesSalvas) lojas = JSON.parse(storesSalvas);
-            
-            if (lojas.length === 0) {
-                lojas.push({ id: 'default', name: 'Gorillas Burguer' });
-                localStorage.setItem('gorillas_stores', JSON.stringify(lojas));
-            }
-            
-            let lastStore = localStorage.getItem('gorillas_current_store') || 'default';
-            if (!lojas.find(l => l.id === lastStore)) lastStore = lojas[0].id;
-            
-            carregarLoja(lastStore);
-            renderStoreSelector();
-        }
-
-        function renderStoreSelector() {
-            let sel = document.getElementById('store-selector');
-            sel.innerHTML = '';
-            lojas.forEach(l => {
-                sel.innerHTML += `<option value="${l.id}" ${l.id === currentStoreId ? 'selected' : ''}>${l.name}</option>`;
-            });
-        }
-
-        function trocarLoja(id) {
-            carregarLoja(id);
-            let activeBtn = document.querySelector('.nav-btn.active');
-            if (activeBtn) activeBtn.click();
-        }
-
-        function novaLoja() {
-            let nome = prompt("Digite o nome da nova loja (Ex: Gorillaz Grill):");
-            if (!nome || nome.trim() === '') return;
-            
-            let duplicar = confirm("Deseja DUPLICAR a loja atual para a nova loja?\n\nClique 'OK' para copiar todo o cardápio, insumos e configurações.\nClique 'Cancelar' para criar uma loja totalmente em branco.");
-            
-            let novoId = 'loja_' + Date.now();
-            lojas.push({ id: novoId, name: nome });
-            localStorage.setItem('gorillas_stores', JSON.stringify(lojas));
-            
-            if (duplicar) {
-                let dbClone = JSON.parse(JSON.stringify(db));
-                localStorage.setItem('sysDbAvancado_' + novoId, JSON.stringify(dbClone));
-            }
-            
-            renderStoreSelector();
-            trocarLoja(novoId);
-        }
-
-        function editarNomeLoja() {
-            let lojaAtual = lojas.find(l => l.id === currentStoreId);
-            if (!lojaAtual) return;
-            let novoNome = prompt("Digite o novo nome para esta loja:", lojaAtual.name);
-            if (novoNome && novoNome.trim() !== "") {
-                lojaAtual.name = novoNome.trim();
-                localStorage.setItem('gorillas_stores', JSON.stringify(lojas));
-                renderStoreSelector();
-            }
-        }
-
-        function carregarLoja(id) {
-            currentStoreId = id;
-            localStorage.setItem('gorillas_current_store', id);
-            
-            let dadosSalvos = localStorage.getItem('sysDbAvancado_' + id);
-            
-            if (!dadosSalvos && id === 'default') {
-                dadosSalvos = localStorage.getItem('sysDbAvancado');
+        async function loadMenuFromSheet() {
+            if (SHEET_ID === "COLE_SEU_ID_AQUI") {
+                document.getElementById('menu-items').innerHTML = '<p style="text-align:center; color:#ef4444;">⚠️ Atenção Chefe! Você precisa colocar o ID da Planilha no código HTML.</p>';
+                return;
             }
 
-            if (dadosSalvos) {
-                db = JSON.parse(dadosSalvos);
-            } else {
-                db = { dna: { faturamento: 0, despesas: 0, cartao: 0, mkt: 0, imposto: 0, ifood: 15.5 }, despesasFixas: [], insumos: [], fichas: [], caixa: [], listaCompras: [], cotacoes: [], prep: [], config: { lastPrepDate: '', migradoLotes: false } };
-            }
-            
-            if(!db.caixa) db.caixa = []; 
-            if(!db.despesasFixas) db.despesasFixas = []; 
-            if(!db.listaCompras) db.listaCompras = []; 
-            if(!db.cotacoes) db.cotacoes = []; 
-            if(!db.prep) db.prep = []; 
-            if(!db.config) db.config = { lastPrepDate: '', migradoLotes: false };
-            if(!db.dna) db.dna = { faturamento: 0, despesas: 0, cartao: 0, mkt: 0, imposto: 0, ifood: 0 };
-
-            if(!db.config.migradoLotes) {
-                db.insumos.forEach(i => {
-                    if(!i.lotes) {
-                        i.lotes = [];
-                        i.lotes.push({ id: Date.now() + Math.floor(Math.random() * 1000), qtd: i.qtdOriginal || 0, validade: i.validade || '', preco: i.preco || 0 });
-                    }
-                });
-                db.config.migradoLotes = true;
-                salvarDb();
-            }
-
-            // 👉 LIGA A SINCRONIZAÇÃO EM TEMPO REAL PARA ESTA LOJA
-            iniciarSincronizacaoNuvem();
-        }
-
-        function salvarDb() { 
-            try { 
-                // 1. Salva na Nuvem (Firebase)
-                database.ref('gorillazDbOnline_' + currentStoreId).set(db);
-
-                // 2. Salva Localmente (Backup)
-                localStorage.setItem('sysDbAvancado_' + currentStoreId, JSON.stringify(db)); 
-                if (currentStoreId === 'default') {
-                    localStorage.setItem('sysDbAvancado', JSON.stringify(db));
-                }
-            } catch(e) {
-                console.error("Erro ao salvar:", e);
-            } 
-        }
-
-        // --- ☁️ FUNÇÃO DE SINCRONIZAÇÃO AUTOMÁTICA ---
-        function iniciarSincronizacaoNuvem() {
-            // Desliga a conexão antiga antes de ligar a nova (evita duplicar eventos ao trocar de loja)
-            database.ref('gorillazDbOnline_' + currentStoreId).off();
-            
-            // Fica escutando as mudanças na nuvem
-            database.ref('gorillazDbOnline_' + currentStoreId).on('value', (snapshot) => {
-                const dadosNuvem = snapshot.val();
-                if (dadosNuvem) {
-                    db = dadosNuvem;
+            try {
+                const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+                const response = await fetch(url);
+                const text = await response.text();
+                
+                const jsonStr = text.substring(47).slice(0, -2);
+                const data = JSON.parse(jsonStr);
+                const rows = data.table.rows;
+                const newMenu = [];
+                
+                rows.forEach(row => {
+                    if(!row.c[0] || row.c[0].v === null) return; 
                     
-                    // Atualiza a interface gráfica se tiver alguma tela aberta
-                    if(document.getElementById('tela-dashboard').classList.contains('active')) renderDashboard();
-                    if(document.getElementById('tela-inventario').classList.contains('active')) renderInventario();
-                    if(document.getElementById('tela-prep').classList.contains('active')) renderPrep();
-                    if(document.getElementById('tela-dna').classList.contains('active')) { loadDNA(); renderDespesasFixas(); }
-                    if(document.getElementById('tela-insumos').classList.contains('active')) renderInsumos();
-                    if(document.getElementById('tela-fichas').classList.contains('active')) renderFichas();
-                    if(document.getElementById('tela-combos').classList.contains('active')) renderCombos();
-                    if(document.getElementById('tela-precos').classList.contains('active')) loadSelectProdutos();
-                    if(document.getElementById('tela-lista').classList.contains('active')) renderListaCompras();
-                    if(document.getElementById('tela-caixa').classList.contains('active')) renderCaixa();
-                }
-            });
-        }
-        // -------------------------------------------
-
-        function mudarTela(id, titulo, btn) {
-            document.querySelectorAll('.screen').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tela-' + id).classList.add('active'); btn.classList.add('active');
-            document.getElementById('header-title').innerText = titulo;
-            
-            if(id === 'dashboard') renderDashboard();
-            if(id === 'inventario') renderInventario();
-            if(id === 'prep') { checkPrepReset(); renderPrep(); }
-            if(id === 'dna') { loadDNA(); renderDespesasFixas(); }
-            if(id === 'insumos') renderInsumos();
-            if(id === 'fichas') renderFichas();
-            if(id === 'combos') { renderOpcoesIsencaoCombo(); renderCombos(); }
-            if(id === 'precos') loadSelectProdutos();
-            if(id === 'lista') { loadInsumosListaCompras(); renderListaCompras(); }
-            if(id === 'caixa') renderCaixa(); 
-            
-            document.querySelector('.main-content').scrollTo(0, 0);
-        }
-
-        function renderDashboard() {
-            let dataAtual = getDataLocal();
-            let mesAtual = dataAtual.substring(0, 7); 
-            let caixaHoje = 0; let mesEntradas = 0; let mesSaidas = 0;
-
-            db.caixa.forEach(c => {
-                if(!c || !c.data) return;
-                let ent = c.entradaLiquida !== undefined ? c.entradaLiquida : 0;
-                let sai = c.saidas !== undefined ? c.saidas : 0;
-
-                if(c.data === dataAtual && c.nota !== "Calibração Manual") caixaHoje += ent;
-                if(c.data.substring(0, 7) === mesAtual && c.nota !== "Calibração Manual") { 
-                    mesEntradas += ent; 
-                    mesSaidas += sai; 
-                }
-            });
-
-            document.getElementById('dash-caixa-dia').innerText = 'R$ ' + caixaHoje.toFixed(2);
-            document.getElementById('dash-mes-entradas').innerText = 'R$ ' + mesEntradas.toFixed(2);
-            document.getElementById('dash-mes-saidas').innerText = 'R$ ' + mesSaidas.toFixed(2);
-            document.getElementById('dash-mes-saldo').innerText = 'R$ ' + (mesEntradas - mesSaidas).toFixed(2);
-
-            let dna = getDnaPercent() * 100; document.getElementById('dash-dna-total').innerText = dna.toFixed(2) + '%';
-            let totalPrep = db.prep.length; let donePrep = db.prep.filter(p => p.checked).length;
-            document.getElementById('dash-prep-status').innerText = `${donePrep}/${totalPrep}`;
-            
-            let alertaPrep = document.getElementById('alerta-prep');
-            alertaPrep.style.display = (totalPrep > 0 && donePrep < totalPrep) ? 'block' : 'none';
-        }
-
-        function delLote(insumoId, loteId) {
-            let insumo = db.insumos.find(i => i.id === insumoId);
-            if(insumo && insumo.lotes) {
-                insumo.lotes = insumo.lotes.filter(l => l.id !== loteId);
-                salvarDb(); renderInventario(); renderDashboard();
-            }
-        }
-
-        function ajustarLoteQtd(insumoId, loteId, delta) {
-            let insumo = db.insumos.find(i => i.id === insumoId);
-            if(insumo && insumo.lotes) {
-                let lote = insumo.lotes.find(l => l.id === loteId);
-                if(lote) {
-                    lote.qtd = (parseFloat(lote.qtd) || 0) + delta;
-                    if(lote.qtd < 0) lote.qtd = 0;
-                    salvarDb(); renderInventario();
-                }
-            }
-        }
-
-        function renderInventario() {
-            let html = '';
-            db.insumos.forEach(insumo => {
-                if(insumo.lotes && insumo.lotes.length > 0) {
-                    let htmlLotes = '';
-                    insumo.lotes.forEach((lote, index) => {
-                        let dataBr = lote.validade ? lote.validade.split('-').reverse().join('/') : 'Sem data';
-                        let dias = calcDiasVencimento(lote.validade);
-                        let corValidade = '#64748b';
-                        if(dias !== null) { if(dias < 0) corValidade = '#ef4444'; else if(dias <= 7) corValidade = '#f59e0b'; }
-                        htmlLotes += `
-                        <div class="lote-box">
-                            <div><div style="font-weight:bold; font-size:13px; color:var(--dark);">Lote ${index + 1}</div><div style="font-size:12px; color:${corValidade};">Val: ${dataBr}</div></div>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <div style="display:flex; align-items:center; background:#e2e8f0; border-radius:4px;">
-                                    <button style="border:none; background:none; padding:6px 10px; font-weight:bold; color:var(--dark); cursor:pointer;" onclick="ajustarLoteQtd(${insumo.id}, ${lote.id}, -1)">-</button>
-                                    <span style="font-size:13px; font-weight:bold; width:40px; text-align:center;">${lote.qtd}</span>
-                                    <button style="border:none; background:none; padding:6px 10px; font-weight:bold; color:var(--dark); cursor:pointer;" onclick="ajustarLoteQtd(${insumo.id}, ${lote.id}, 1)">+</button>
-                                </div>
-                                <span style="font-size:11px; color:#64748b;">${insumo.medidaOriginal}</span>
-                                <button class="btn-danger" style="padding: 6px 12px; font-size:12px;" onclick="delLote(${insumo.id}, ${lote.id})">🔥 Zerar</button>
-                            </div>
-                        </div>`;
-                    });
-                    html += `<div class="list-item" style="border-left: 4px solid var(--secondary);"><div class="list-title" style="color: var(--primary); font-size:16px;">${insumo.nome}</div>${htmlLotes}</div>`;
-                }
-            });
-            document.getElementById('lista-inventario-container').innerHTML = html || '<p style="text-align:center; font-size:14px; color:#64748b;">Nenhum insumo no estoque.</p>';
-        }
-
-        function checkPrepReset() {
-            let dataAtual = getDataLocal();
-            if (db.config.lastPrepDate !== dataAtual) { db.prep.forEach(p => p.checked = false); db.config.lastPrepDate = dataAtual; salvarDb(); }
-        }
-        let editandoPrepId = null;
-        function editarPrep(id) { let item = db.prep.find(p => p.id === id); if(!item) return; document.getElementById('prep-nome').value = item.nome; editandoPrepId = id; let btn = document.getElementById('btn-salvar-prep'); btn.innerText = "✓ Atualizar Tarefa"; btn.style.background = "#f59e0b"; document.getElementById('btn-cancelar-prep').style.display = "block"; document.querySelector('.main-content').scrollTo({ top: 0, behavior: 'smooth' }); }
-        function cancelarEdicaoPrep() { editandoPrepId = null; document.getElementById('prep-nome').value = ''; let btn = document.getElementById('btn-salvar-prep'); btn.innerText = "+ Adicionar Tarefa"; btn.style.background = "var(--dark)"; document.getElementById('btn-cancelar-prep').style.display = "none"; }
-        function addPrep() { let nome = document.getElementById('prep-nome').value; if(!nome) return alert("Digite o nome da tarefa!"); if(editandoPrepId) { let index = db.prep.findIndex(p => p.id === editandoPrepId); if(index !== -1) db.prep[index].nome = nome; cancelarEdicaoPrep(); } else { db.prep.push({ id: Date.now(), nome: nome, checked: false }); document.getElementById('prep-nome').value = ''; } salvarDb(); renderPrep(); renderDashboard(); }
-        function delPrep(id) { db.prep = db.prep.filter(p => p.id !== id); salvarDb(); renderPrep(); renderDashboard(); }
-        function togglePrep(id) { let item = db.prep.find(p => p.id === id); if(item) { item.checked = !item.checked; salvarDb(); renderPrep(); renderDashboard(); } }
-        function moverPrep(id, direcao) { let index = db.prep.findIndex(p => p.id === id); if (index < 0) return; if (direcao === 'cima' && index > 0) { let temp = db.prep[index]; db.prep[index] = db.prep[index - 1]; db.prep[index - 1] = temp; } else if (direcao === 'baixo' && index < db.prep.length - 1) { let temp = db.prep[index]; db.prep[index] = db.prep[index + 1]; db.prep[index + 1] = temp; } salvarDb(); renderPrep(); }
-        function renderPrep() {
-            let html = ''; let pendentes = db.prep.filter(p => !p.checked); let concluidos = db.prep.filter(p => p.checked); let displayList = [...pendentes, ...concluidos];
-            displayList.forEach((p) => {
-                let textDec = p.checked ? 'line-through' : 'none'; let color = p.checked ? '#94a3b8' : 'var(--dark)';
-                let controles = p.checked ? '' : `<button class="btn-small" style="padding: 6px 12px; margin-right: 5px; background: #cbd5e1; color: var(--dark);" onclick="event.stopPropagation(); moverPrep(${p.id}, 'cima')">▲</button><button class="btn-small" style="padding: 6px 12px; margin-right: 5px; background: #cbd5e1; color: var(--dark);" onclick="event.stopPropagation(); moverPrep(${p.id}, 'baixo')">▼</button>`;
-                html += `<div class="list-item" style="display: flex; align-items: center; justify-content: space-between; opacity: ${p.checked ? '0.6' : '1'}; border-left: 4px solid ${p.checked ? '#10b981' : '#0f172a'};"><div style="display: flex; align-items: center; gap: 15px; flex: 1; cursor: pointer;" onclick="togglePrep(${p.id})"><input type="checkbox" ${p.checked ? 'checked' : ''} style="width: 24px; height: 24px; margin: 0;"><div style="font-weight: bold; color: ${color}; text-decoration: ${textDec}; font-size: 16px;">${p.nome}</div></div><div style="display: flex; align-items: center; gap: 5px;">${controles}<button class="btn-small" style="background:#f59e0b; color:white; padding: 6px 12px;" onclick="event.stopPropagation(); editarPrep(${p.id})">✏️</button><button class="btn-danger" style="padding: 6px 12px;" onclick="event.stopPropagation(); delPrep(${p.id})">X</button></div></div>`;
-            });
-            document.getElementById('lista-prep-container').innerHTML = html || '<div style="font-size: 14px; color: #64748b; text-align: center; padding: 15px 0;">Nenhuma tarefa cadastrada.</div>';
-        }
-
-        function loadDNA() {
-            document.getElementById('dna-faturamento').value = db.dna.faturamento || ''; document.getElementById('dna-cartao').value = db.dna.cartao || ''; document.getElementById('dna-mkt').value = db.dna.mkt || ''; document.getElementById('dna-imposto').value = db.dna.imposto || ''; document.getElementById('dna-ifood').value = db.dna.ifood || '';
-            renderDespesasFixas();
-        }
-        function addDespesa() { let nome = document.getElementById('despesa-nome').value; let valor = parseFloat(document.getElementById('despesa-valor').value); if(!nome || isNaN(valor)) return alert("Preencha o nome da conta e o valor!"); db.despesasFixas.push({ id: Date.now(), nome: nome, valor: valor }); salvarDb(); document.getElementById('despesa-nome').value = ''; document.getElementById('despesa-valor').value = ''; renderDespesasFixas(); renderOpcoesIsencaoCombo(); }
-        function delDespesa(id) { db.despesasFixas = db.despesasFixas.filter(d => d.id !== id); salvarDb(); renderDespesasFixas(); renderOpcoesIsencaoCombo(); }
-        function renderDespesasFixas() {
-            let html = ''; let totalDespesas = 0;
-            db.despesasFixas.forEach(d => { totalDespesas += d.valor; html += `<div style="display:flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding: 12px 0; font-size: 15px;"><span style="color: var(--primary); font-weight: bold;">${d.nome}</span><span>R$ ${d.valor.toFixed(2)} <button class="btn-danger" style="padding: 4px 10px; margin-left: 15px;" onclick="delDespesa(${d.id})">X</button></span></div>`; });
-            document.getElementById('lista-despesas').innerHTML = html; document.getElementById('res-despesas-total').innerText = 'R$ ' + totalDespesas.toFixed(2); db.dna.despesas = totalDespesas; calcDNA();
-        }
-        function calcDNA() {
-            let fat = parseFloat(document.getElementById('dna-faturamento').value) || 0; let cartao = parseFloat(document.getElementById('dna-cartao').value) || 0; let mkt = parseFloat(document.getElementById('dna-mkt').value) || 0; let imp = parseFloat(document.getElementById('dna-imposto').value) || 0; let ifood = parseFloat(document.getElementById('dna-ifood').value) || 0;
-            db.dna = { faturamento: fat, despesas: db.dna.despesas, cartao: cartao, mkt: mkt, imposto: imp, ifood: ifood }; salvarDb();
-            let percCustoFixo = fat > 0 ? (db.dna.despesas / fat) * 100 : 0; let dnaTotal = percCustoFixo + cartao + mkt + imp; document.getElementById('res-dna').innerText = dnaTotal.toFixed(2) + '%';
-        }
-
-        let editandoInsumoId = null;
-        function editarInsumo(id) {
-            let item = db.insumos.find(i => i.id === id); if (!item) return; document.getElementById('insumo-nome').value = item.nome; document.getElementById('insumo-preco').value = item.preco; document.getElementById('insumo-medida').value = item.medidaOriginal || item.medida; document.getElementById('insumo-qtd').value = item.qtdOriginal || item.baseQtd;
-            let val = ''; if(item.lotes && item.lotes.length > 0) val = item.lotes[0].validade; document.getElementById('insumo-validade').value = val;
-            editandoInsumoId = id; let btnSalvar = document.getElementById('btn-salvar-insumo'); btnSalvar.innerText = "✓ Atualizar Insumo"; btnSalvar.style.backgroundColor = "#f59e0b"; document.getElementById('btn-cancelar-insumo').style.display = "block"; document.querySelector('.main-content').scrollTo({ top: 0, behavior: 'smooth' });
-        }
-        function cancelarEdicaoInsumo() { editandoInsumoId = null; document.getElementById('insumo-nome').value = ''; document.getElementById('insumo-preco').value = ''; document.getElementById('insumo-qtd').value = ''; document.getElementById('insumo-validade').value = ''; let btnSalvar = document.getElementById('btn-salvar-insumo'); btnSalvar.innerText = "+ Salvar Insumo"; btnSalvar.style.backgroundColor = "var(--secondary)"; document.getElementById('btn-cancelar-insumo').style.display = "none"; }
-        function addInsumo() {
-            let nome = document.getElementById('insumo-nome').value; let preco = parseFloat(document.getElementById('insumo-preco').value); let medidaSelecionada = document.getElementById('insumo-medida').value; let qtd = parseFloat(document.getElementById('insumo-qtd').value); let validade = document.getElementById('insumo-validade').value;
-            if(!nome || isNaN(preco) || isNaN(qtd)) return alert("Preencha Nome, Preço e Quantidade!"); let medidaBase = medidaSelecionada; let baseQtd = qtd; if(medidaBase === 'KG') { baseQtd = qtd * 1000; medidaBase = 'GR'; } if(medidaBase === 'L') { baseQtd = qtd * 1000; medidaBase = 'ML'; } let custoUnitario = preco / baseQtd;
-            if (editandoInsumoId) { let index = db.insumos.findIndex(i => i.id === editandoInsumoId); if (index !== -1) { db.insumos[index].nome = nome; db.insumos[index].preco = preco; db.insumos[index].baseQtd = baseQtd; db.insumos[index].medida = medidaBase; db.insumos[index].custoUnitario = custoUnitario; db.insumos[index].qtdOriginal = qtd; db.insumos[index].medidaOriginal = medidaSelecionada; if(db.insumos[index].lotes && db.insumos[index].lotes.length > 0) { db.insumos[index].lotes[0].validade = validade; db.insumos[index].lotes[0].preco = preco; db.insumos[index].lotes[0].qtd = qtd; } } } else { let novoInsumo = { id: Date.now(), nome: nome, preco: preco, baseQtd: baseQtd, medida: medidaBase, custoUnitario: custoUnitario, qtdOriginal: qtd, medidaOriginal: medidaSelecionada, lotes: [] }; novoInsumo.lotes.push({ id: Date.now() + 1, qtd: qtd, validade: validade, preco: preco }); db.insumos.push(novoInsumo); }
-            salvarDb(); cancelarEdicaoInsumo(); renderInsumos(); renderFichas(); simularPreco(); renderDashboard();
-        }
-        function delInsumo(id) { db.insumos = db.insumos.filter(i => i.id !== id); salvarDb(); renderInsumos(); renderFichas(); renderDashboard();}
-        function renderInsumos() {
-            let html = ''; db.insumos.forEach(item => { let qtdLotes = item.lotes ? item.lotes.length : 0; html += `<div class="list-item"><div class="list-title">${item.nome} <div><button class="btn-small" style="background:#f59e0b; color:white; padding: 6px 12px; margin-right: 8px;" onclick="editarInsumo(${item.id})">✏️</button><button class="btn-danger" style="padding: 6px 12px;" onclick="delInsumo(${item.id})">X</button></div></div><div class="list-subtitle" style="display:flex; justify-content:space-between; align-items:center;"><span>Ref. CMV: R$ ${item.custoUnitario.toFixed(4)} por ${item.medida}</span><span style="font-size: 11px; background: #e2e8f0; color: #475569; padding: 4px 8px; border-radius: 4px;">${qtdLotes} Lote(s)</span></div></div>`; }); document.getElementById('lista-insumos').innerHTML = html;
-        }
-
-        let editandoComboId = null;
-
-        function renderOpcoesIsencaoCombo() {
-            let container = document.getElementById('combo-custos-dinamicos');
-            let html = '';
-            if(db.despesasFixas.length === 0) {
-                html = '<div style="font-size:13px; color:#64748b; font-style:italic;">Nenhum custo fixo individual cadastrado.</div>';
-            } else {
-                db.despesasFixas.forEach(d => {
-                    html += `
-                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: normal; color: var(--dark); margin-top: 8px; cursor: pointer;">
-                        <input type="checkbox" class="chk-isenta-despesa" value="${d.id}" style="width: 18px; height: 18px; margin: 0;"> 
-                        Remover conta: <b>${d.nome}</b> <span style="color:#ef4444;">(- R$ ${d.valor.toFixed(2)})</span>
-                    </label>`;
-                });
-            }
-            container.innerHTML = html;
-        }
-
-        function editarCombo(id) {
-            let combo = db.fichas.find(c => c.id === id && c.tipo === 'combo');
-            if(!combo) return;
-
-            document.getElementById('combo-nome').value = combo.nome;
-            document.querySelectorAll('.chk-isenta-despesa').forEach(chk => chk.checked = false);
-            document.getElementById('combo-isenta-mkt').checked = false;
-
-            if(combo.dnaCustom) {
-                if(combo.dnaCustom.isentaMkt) document.getElementById('combo-isenta-mkt').checked = true;
-                if(combo.dnaCustom.isentoDespesasIds) {
-                    combo.dnaCustom.isentoDespesasIds.forEach(idDespesa => {
-                        let chk = document.querySelector(`.chk-isenta-despesa[value="${idDespesa}"]`);
-                        if(chk) chk.checked = true;
-                    });
-                }
-            }
-
-            editandoComboId = id;
-            let btnSalvar = document.getElementById('btn-salvar-combo');
-            btnSalvar.innerText = "✓ Atualizar Combo"; 
-            btnSalvar.style.backgroundColor = "#f59e0b"; 
-            document.getElementById('btn-cancelar-combo').style.display = "block";
-            document.querySelector('.main-content').scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function cancelarEdicaoCombo() {
-            editandoComboId = null;
-            document.getElementById('combo-nome').value = '';
-            document.querySelectorAll('.chk-isenta-despesa').forEach(chk => chk.checked = false);
-            document.getElementById('combo-isenta-mkt').checked = false;
-            
-            let btnSalvar = document.getElementById('btn-salvar-combo');
-            btnSalvar.innerText = "+ Criar Combo"; 
-            btnSalvar.style.backgroundColor = "#8b5cf6"; 
-            document.getElementById('btn-cancelar-combo').style.display = "none";
-        }
-
-        let editandoFichaId = null;
-        function editarFicha(id) {
-            let f = db.fichas.find(x => x.id === id);
-            if(!f) return;
-            document.getElementById('ficha-nome').value = f.nome;
-            document.getElementById('ficha-tipo').value = f.tipo;
-            document.getElementById('ficha-rendimento').value = f.rendimento;
-            editandoFichaId = id;
-            let btn = document.getElementById('btn-salvar-ficha');
-            btn.innerText = "✓ Atualizar Ficha";
-            btn.style.backgroundColor = "#f59e0b";
-            document.getElementById('btn-cancelar-ficha').style.display = "inline-block";
-            document.querySelector('.main-content').scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function cancelarEdicaoFicha() {
-            editandoFichaId = null;
-            document.getElementById('ficha-nome').value = '';
-            document.getElementById('ficha-tipo').value = 'produto';
-            document.getElementById('ficha-rendimento').value = '1';
-            let btn = document.getElementById('btn-salvar-ficha');
-            btn.innerText = "+ Criar Ficha";
-            btn.style.backgroundColor = "var(--secondary)";
-            document.getElementById('btn-cancelar-ficha').style.display = "none";
-        }
-
-        function addFicha() { 
-            let nome = document.getElementById('ficha-nome').value; 
-            let tipo = document.getElementById('ficha-tipo').value; 
-            let rend = parseFloat(document.getElementById('ficha-rendimento').value) || 1; 
-            if(!nome) return alert("Digite o nome!"); 
-            
-            if(editandoFichaId) {
-                let index = db.fichas.findIndex(f => f.id === editandoFichaId);
-                if(index !== -1) {
-                    db.fichas[index].nome = nome;
-                    db.fichas[index].tipo = tipo;
-                    db.fichas[index].rendimento = rend;
-                }
-                cancelarEdicaoFicha();
-            } else {
-                db.fichas.push({ id: Date.now(), nome: nome, tipo: tipo, rendimento: rend, ingredientes: [] }); 
-                document.getElementById('ficha-nome').value = ''; 
-                document.getElementById('ficha-rendimento').value = '1';
-            }
-            salvarDb(); 
-            renderFichas(); 
-            renderCombos(); 
-            loadSelectProdutos(); 
-        }
-        
-        function addCombo() { 
-            let nome = document.getElementById('combo-nome').value; 
-            if(!nome) return alert("Digite o nome do Combo!"); 
-            
-            let despesasIsentas = [];
-            document.querySelectorAll('.chk-isenta-despesa:checked').forEach(chk => {
-                despesasIsentas.push(parseInt(chk.value));
-            });
-
-            let isentaMkt = document.getElementById('combo-isenta-mkt').checked;
-
-            if(editandoComboId) {
-                let index = db.fichas.findIndex(f => f.id === editandoComboId);
-                if(index !== -1) {
-                    db.fichas[index].nome = nome;
-                    db.fichas[index].dnaCustom = { isentoDespesasIds: despesasIsentas, isentaMkt: isentaMkt };
-                }
-                cancelarEdicaoCombo();
-            } else {
-                db.fichas.push({ 
-                    id: Date.now(), 
-                    nome: nome, 
-                    tipo: 'combo', 
-                    rendimento: 1, 
-                    ingredientes: [],
-                    dnaCustom: { isentoDespesasIds: despesasIsentas, isentaMkt: isentaMkt }
-                }); 
-                document.getElementById('combo-nome').value = ''; 
-                document.querySelectorAll('.chk-isenta-despesa').forEach(chk => chk.checked = false);
-                document.getElementById('combo-isenta-mkt').checked = false;
-            }
-            
-            salvarDb(); 
-            renderCombos(); 
-            loadSelectProdutos(); 
-        }
-
-        function delFicha(id) { db.fichas = db.fichas.filter(f => f.id !== id); salvarDb(); renderFichas(); renderCombos(); loadSelectProdutos(); }
-        
-        function duplicarCombo(id) {
-            let comboOriginal = db.fichas.find(c => c.id === id && c.tipo === 'combo');
-            if(!comboOriginal) return;
-
-            let novoCombo = JSON.parse(JSON.stringify(comboOriginal));
-            
-            novoCombo.id = Date.now();
-            novoCombo.nome = novoCombo.nome + " (Cópia)";
-            
-            db.fichas.push(novoCombo);
-            salvarDb();
-            renderCombos();
-            loadSelectProdutos();
-        }
-
-        function duplicarFicha(id) {
-            let fichaOriginal = db.fichas.find(f => f.id === id && f.tipo !== 'combo');
-            if(!fichaOriginal) return;
-
-            let novaFicha = JSON.parse(JSON.stringify(fichaOriginal));
-            
-            novaFicha.id = Date.now();
-            novaFicha.nome = novaFicha.nome + " (Cópia)";
-            
-            db.fichas.push(novaFicha);
-            salvarDb();
-            renderFichas();
-            loadSelectProdutos();
-        }
-
-        function addIngredienteFicha(fichaId, isCombo = false) { 
-            let prefix = isCombo ? 'sel-prod-' : 'sel-ing-'; 
-            let prefixQtd = isCombo ? 'qtd-prod-' : 'qtd-ing-'; 
-            let insumoId = parseInt(document.getElementById(prefix+fichaId).value); 
-            let qtd = parseFloat(document.getElementById(prefixQtd+fichaId).value); 
-            
-            if(isNaN(insumoId) || isNaN(qtd)) return alert("Selecione um item e a quantidade!"); 
-            if (insumoId === fichaId) return alert("Erro Estratégico: Você não pode adicionar um produto como ingrediente dele mesmo (Loop Infinito).");
-
-            let ficha = db.fichas.find(f => f.id === fichaId); 
-            if(ficha) { 
-                ficha.ingredientes.push({ insumoId: insumoId, qtd: qtd }); 
-                salvarDb(); 
-                if(isCombo) renderCombos(); else renderFichas(); 
-            } 
-        }
-        
-        function delIngredienteFicha(fichaId, idx, isCombo = false) { let ficha = db.fichas.find(f => f.id === fichaId); if(ficha) { ficha.ingredientes.splice(idx, 1); salvarDb(); if(isCombo) renderCombos(); else renderFichas(); } }
-        
-        function editarIngredienteFicha(fichaId, idx, isCombo = false) {
-            let ficha = db.fichas.find(f => f.id === fichaId);
-            if(ficha && ficha.ingredientes[idx]) {
-                let ing = ficha.ingredientes[idx];
-                let prefix = isCombo ? 'sel-prod-' : 'sel-ing-';
-                let prefixQtd = isCombo ? 'qtd-prod-' : 'qtd-ing-';
-                
-                document.getElementById(prefix + fichaId).value = ing.insumoId;
-                document.getElementById(prefixQtd + fichaId).value = ing.qtd;
-                
-                // Remove o item da lista para ser adicionado novamente atualizado
-                ficha.ingredientes.splice(idx, 1);
-                salvarDb();
-                if(isCombo) renderCombos(); else renderFichas();
-            }
-        }
-
-        function calcularCMVFicha(ficha) { let total = 0; if(!ficha.ingredientes) return 0; for(let i = 0; i < ficha.ingredientes.length; i++) { let ing = ficha.ingredientes[i]; let insumo = db.insumos.find(x => x.id === ing.insumoId); if(insumo) { total += insumo.custoUnitario * ing.qtd; } else { let subFicha = db.fichas.find(f => f.id === ing.insumoId); if(subFicha) total += calcularCMVFicha(subFicha) * ing.qtd; } } return total / (ficha.rendimento || 1); }
-        
-        function renderFichas() {
-            let html = ''; let optionsIng = `<option value="">Selecionar...</option>`; db.insumos.forEach(i => optionsIng += `<option value="${i.id}">${i.nome} (${i.medida})</option>`); db.fichas.forEach(f => { if(f.tipo === 'receita') optionsIng += `<option value="${f.id}">[R] ${f.nome}</option>`; });
-            db.fichas.forEach(f => { 
-                if(f.tipo === 'combo') return; 
-                let cmvUnit = calcularCMVFicha(f); 
-                let tag = f.tipo === 'receita' ? '🥣 Manipulação' : '🍔 Venda/Cardápio'; 
-                let htmlIngs = ''; 
-                f.ingredientes.forEach((ing, j) => { 
-                    let nomeItem = "Apagado"; 
-                    let iDb = db.insumos.find(x => x.id === ing.insumoId); 
-                    let fDb = db.fichas.find(x => x.id === ing.insumoId); 
-                    if(iDb) nomeItem = iDb.nome; 
-                    if(fDb) nomeItem = "[R] " + fDb.nome; 
-                    htmlIngs += `
-                    <div style="display:flex; justify-content:space-between; font-size:14px; border-bottom:1px dashed #ccc; padding:8px 0;">
-                        <span>${ing.qtd}x ${nomeItem}</span>
-                        <div>
-                            <span style="color:#f59e0b; cursor:pointer; margin-right:12px; font-weight:bold;" onclick="editarIngredienteFicha(${f.id}, ${j})">Editar</span>
-                            <span style="color:red; cursor:pointer; font-weight:bold;" onclick="delIngredienteFicha(${f.id}, ${j})">Excluir</span>
-                        </div>
-                    </div>`; 
-                }); 
-                html += `
-                <div class="card" style="border-left: 4px solid ${f.tipo === 'receita' ? '#f59e0b' : '#3b82f6'};">
-                    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-                        <span>${f.nome}</span>
-                        <div>
-                            <button class="btn-small" style="background:#3b82f6; color:white; padding: 6px 12px; font-size: 13px; margin-right: 8px;" onclick="duplicarFicha(${f.id})">📋 Copiar</button>
-                            <button class="btn-small" style="background:#f59e0b; color:white; padding: 6px 12px; font-size: 13px; margin-right: 8px;" onclick="editarFicha(${f.id})">✏️</button>
-                            <button class="btn-danger" style="padding: 6px 12px;" onclick="delFicha(${f.id})">X</button>
-                        </div>
-                    </div>
-                    <div class="list-subtitle">${tag} | Rendimento: ${f.rendimento} un</div>
-                    <div class="highlight" style="font-size:16px;">CMV/Unidade: R$ ${cmvUnit.toFixed(2)}</div>
-                    <div style="margin: 15px 0;">${htmlIngs}</div>
-                    <div class="row">
-                        <div class="col"><select id="sel-ing-${f.id}">${optionsIng}</select></div>
-                        <div class="col" style="flex:0.5"><input type="number" id="qtd-ing-${f.id}" placeholder="Qtd"></div>
-                    </div>
-                    <button class="btn btn-small" onclick="addIngredienteFicha(${f.id})">+ Adicionar</button>
-                </div>`; 
-            }); 
-            document.getElementById('lista-fichas-container').innerHTML = html;
-        }
-
-        function renderCombos() {
-            let html = ''; let optionsProd = `<option value="">Selecionar Produto...</option>`; db.fichas.forEach(f => { if(f.tipo === 'produto') optionsProd += `<option value="${f.id}">${f.nome}</option>`; });
-            db.fichas.forEach(c => { 
-                if(c.tipo !== 'combo') return; 
-                let cmvTotal = calcularCMVFicha(c); let htmlProds = ''; 
-                c.ingredientes.forEach((ing, j) => { 
-                    let pDb = db.fichas.find(x => x.id === ing.insumoId); 
-                    let nomeItem = pDb ? pDb.nome : "Apagado"; 
-                    htmlProds += `
-                    <div style="display:flex; justify-content:space-between; font-size:14px; border-bottom:1px dashed #ccc; padding:8px 0;">
-                        <span>${ing.qtd}x ${nomeItem}</span>
-                        <div>
-                            <span style="color:#f59e0b; cursor:pointer; margin-right:12px; font-weight:bold;" onclick="editarIngredienteFicha(${c.id}, ${j}, true)">Editar</span>
-                            <span style="color:red; cursor:pointer; font-weight:bold;" onclick="delIngredienteFicha(${c.id}, ${j}, true)">Excluir</span>
-                        </div>
-                    </div>`; 
-                }); 
-                
-                let tagsDna = '';
-                if(c.dnaCustom) {
-                    if(c.dnaCustom.isentoDespesasIds && c.dnaCustom.isentoDespesasIds.length > 0) {
-                        let nomesIsentos = [];
-                        c.dnaCustom.isentoDespesasIds.forEach(id => {
-                            let d = db.despesasFixas.find(x => x.id === id);
-                            if(d) nomesIsentos.push(d.nome);
-                        });
-                        if(nomesIsentos.length > 0) {
-                            tagsDna += `<span style="background:#ef4444; color:white; font-size:11px; padding:4px 8px; border-radius:4px; margin-right:8px; display:inline-block; margin-bottom:8px;">SEM: ${nomesIsentos.join(', ')}</span>`;
-                        }
+                    const id = row.c[0].v;
+                    const category = row.c[1] ? row.c[1].v : 'Gorillaz Menu';
+                    const name = row.c[2] ? row.c[2].v : '';
+                    const desc = row.c[3] ? row.c[3].v : '';
+                    const price = row.c[4] ? parseFloat(row.c[4].v) : 0;
+                    const disponivel = row.c[5] ? row.c[5].v : '';
+                    
+                    // 👉 NOVA COLUNA G (Índice 6) - LÊ A IMAGEM
+                    // Se não tiver imagem na planilha, ele usa uma imagem preta padrão
+                    const img = row.c[6] ? row.c[6].v : 'https://via.placeholder.com/150/1e1e1e/f59e0b?text=Gorillaz';
+                    
+                    if(disponivel.toString().toUpperCase() === 'SIM') {
+                        newMenu.push({ id, category, name, desc, price, img });
                     }
-                    if(c.dnaCustom.isentaMkt) tagsDna += '<span style="background:#f59e0b; color:white; font-size:11px; padding:4px 8px; border-radius:4px; display:inline-block; margin-bottom:8px;">SEM MKT</span>';
-                }
+                });
+                
+                menu = newMenu;
+                renderMenu();
+                
+            } catch (error) {
+                console.error("Erro:", error);
+                document.getElementById('menu-items').innerHTML = '<p style="text-align:center; color:#ef4444;">Erro ao carregar o cardápio. Verifique se você publicou a planilha (Acesso Público).</p>';
+            }
+        }
 
+        function renderMenu() {
+            let html = '';
+            let currentCategory = '';
+            
+            if(menu.length === 0) {
+                document.getElementById('menu-items').innerHTML = '<p style="text-align:center;">Nenhum produto disponível no momento.</p>';
+                return;
+            }
+            
+            menu.forEach(item => {
+                if (item.category !== currentCategory) {
+                    html += `<div class="category">${item.category}</div>`;
+                    currentCategory = item.category;
+                }
                 html += `
-                <div class="card" style="border-left: 4px solid #8b5cf6;">
-                    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-                        <span>${c.nome}</span> 
-                        <div>
-                            <button class="btn-small" style="background:#3b82f6; color:white; padding: 6px 12px; font-size: 13px; margin-right: 8px;" onclick="duplicarCombo(${c.id})">📋 Copiar</button>
-                            <button class="btn-small" style="background:#f59e0b; color:white; padding: 6px 12px; font-size: 13px; margin-right: 8px;" onclick="editarCombo(${c.id})">✏️</button>
-                            <button class="btn-danger" style="padding: 6px 12px;" onclick="delFicha(${c.id})">X</button>
-                        </div>
-                    </div>
-                    <div style="margin-bottom: 10px;">${tagsDna}</div>
-                    <div class="highlight" style="font-size:16px; color: #8b5cf6;">CMV Total do Combo: R$ ${cmvTotal.toFixed(2)}</div>
-                    <div style="margin: 15px 0;">${htmlProds}</div>
-                    <div class="row">
-                        <div class="col"><select id="sel-prod-${c.id}">${optionsProd}</select></div>
-                        <div class="col" style="flex:0.5"><input type="number" id="qtd-prod-${c.id}" placeholder="Qtd"></div>
-                    </div><button class="btn btn-small" onclick="addIngredienteFicha(${c.id}, true)">+ Adicionar Produto</button>
-                </div>`; 
-            }); 
-            document.getElementById('lista-combos-container').innerHTML = html;
-        }
-
-        function loadSelectProdutos() {
-            let sel = document.getElementById('simula-produto'); let selRaio = document.getElementById('raio-produto'); sel.innerHTML = '<option value="">Escolha um Produto/Combo...</option>'; selRaio.innerHTML = '<option value="">Selecione para auditar...</option>';
-            db.fichas.forEach(f => { if(f.tipo === 'produto' || f.tipo === 'combo') { let badge = f.tipo === 'combo' ? '🏷️ [Combo] ' : ''; let opt = `<option value="${f.id}">${badge}${f.nome}</option>`; sel.innerHTML += opt; selRaio.innerHTML += opt; } });
-            selecionarProdutoSimulador(); calcRaioX(); renderPrecosSalvos();
-        }
-
-        function selecionarProdutoSimulador() {
-            let id = parseInt(document.getElementById('simula-produto').value);
-            if(isNaN(id)) { document.getElementById('simula-cmv').value = ''; document.getElementById('simula-pv-balcao').innerText = 'R$ 0.00'; document.getElementById('simula-pv-direto').innerText = 'R$ 0.00'; document.getElementById('simula-pv-ifood').innerText = 'R$ 0.00'; document.getElementById('simula-dna-info').style.display = 'none'; return; }
-            let ficha = db.fichas.find(f => f.id === id);
-            if(ficha) { document.getElementById('simula-lucro').value = ficha.lucroDesejado !== undefined ? ficha.lucroDesejado : 20; document.getElementById('simula-extra').value = ficha.taxaExtra !== undefined ? ficha.taxaExtra : 0; }
-            simularPreco();
-        }
-
-        function getDnaPercentItem(ficha) {
-            let fat = db.dna.faturamento || 0; let desp = db.dna.despesas || 0; let mkt = (db.dna.mkt || 0) / 100; let imp = (db.dna.imposto || 0) / 100; let cartao = (db.dna.cartao || 0) / 100;
-            if (ficha && ficha.dnaCustom) {
-                if (ficha.dnaCustom.isentoDespesasIds && ficha.dnaCustom.isentoDespesasIds.length > 0) {
-                    let valorIsento = 0;
-                    ficha.dnaCustom.isentoDespesasIds.forEach(id => { let d = db.despesasFixas.find(x => x.id === id); if(d) valorIsento += d.valor; });
-                    desp -= valorIsento; if(desp < 0) desp = 0; 
-                }
-                if (ficha.dnaCustom.isentaMkt) mkt = 0;
-            }
-            let cf = fat > 0 ? (desp / fat) : 0;
-            return cf + mkt + imp + cartao;
-        }
-
-        function getDnaPercent() { return getDnaPercentItem(null); }
-
-        function simularPreco() {
-            let id = parseInt(document.getElementById('simula-produto').value); if(isNaN(id)) return;
-            let ficha = db.fichas.find(f => f.id === id); if(!ficha) return;
-            let cmv = calcularCMVFicha(ficha); document.getElementById('simula-cmv').value = 'R$ ' + cmv.toFixed(2);
-            let lucroPerc = parseFloat(document.getElementById('simula-lucro').value) / 100 || 0;
-            let extra = parseFloat(document.getElementById('simula-extra').value) || 0;
-            
-            let dnaTotal = getDnaPercentItem(ficha); 
-            let dnaPadrao = getDnaPercent();
-            
-            let infoDna = document.getElementById('simula-dna-info');
-            infoDna.style.display = 'block';
-            if (dnaTotal < dnaPadrao) {
-                infoDna.innerHTML = `🔥 MODO ESCALA: DNA reduzido para ${(dnaTotal*100).toFixed(1)}% <br><span style="font-size:11px; color:#92400e;">(O padrão normal da loja é ${(dnaPadrao*100).toFixed(1)}%)</span>`;
-                infoDna.style.background = '#fef3c7'; infoDna.style.color = '#d97706';
-            } else {
-                infoDna.innerText = `🧬 DNA Normal aplicado: ${(dnaPadrao*100).toFixed(1)}%`;
-                infoDna.style.background = '#f1f5f9'; infoDna.style.color = '#475569';
-            }
-
-            let taxaIfood = (db.dna && db.dna.ifood) ? (db.dna.ifood / 100) : 0; 
-            let margemSobra = 1 - dnaTotal - lucroPerc;
-
-            if(margemSobra <= 0) { document.getElementById('simula-pv-balcao').innerText = "ERRO!"; document.getElementById('simula-pv-direto').innerText = "Margem Negativa"; document.getElementById('simula-pv-ifood').innerText = "ERRO!"; return; }
-            let pvBase = cmv / margemSobra; let pvDelivery = pvBase + extra; let pvIfood = pvDelivery / (1 - taxaIfood); 
-            document.getElementById('simula-pv-balcao').innerText = 'R$ ' + pvBase.toFixed(2); document.getElementById('simula-pv-direto').innerText = 'R$ ' + pvDelivery.toFixed(2); document.getElementById('simula-pv-ifood').innerText = 'R$ ' + pvIfood.toFixed(2); 
-        }
-
-        function salvarPrecoAtual() { let id = parseInt(document.getElementById('simula-produto').value); if(isNaN(id)) return alert("Selecione um produto primeiro!"); let ficha = db.fichas.find(f => f.id === id); if(ficha) { ficha.lucroDesejado = parseFloat(document.getElementById('simula-lucro').value) || 0; ficha.taxaExtra = parseFloat(document.getElementById('simula-extra').value) || 0; ficha.precoBalcao = document.getElementById('simula-pv-balcao').innerText; ficha.precoDireto = document.getElementById('simula-pv-direto').innerText; ficha.precoIfood = document.getElementById('simula-pv-ifood').innerText; salvarDb(); renderPrecosSalvos(); } }
-        function editarPrecoSalvo(id) { document.getElementById('simula-produto').value = id; selecionarProdutoSimulador(); document.querySelector('.main-content').scrollTo({ top: 0, behavior: 'smooth' }); }
-        function delPrecoSalvo(id) { let f = db.fichas.find(x => x.id === id); if(f) { f.precoBalcao=null; f.precoDireto=null; salvarDb(); renderPrecosSalvos(); } }
-        function limparCardapio() { db.fichas.forEach(f => { f.precoBalcao=null; f.precoDireto=null; }); salvarDb(); renderPrecosSalvos(); }
-        function renderPrecosSalvos() {
-            let html = ''; db.fichas.forEach(f => { if((f.tipo === 'produto' || f.tipo === 'combo') && f.precoDireto) { let border = f.tipo === 'combo' ? '#8b5cf6' : 'var(--secondary)'; let tag = f.tipo === 'combo' ? '<span style="font-size:11px; background:#8b5cf6; color:white; padding:4px 8px; border-radius:4px; margin-right: 10px;">COMBO</span> ' : ''; let balcao = f.precoBalcao || 'N/A'; html += `<div class="list-item" style="border-left: 4px solid ${border};"><div class="list-title" style="color: var(--primary);"><span>${tag}${f.nome}</span><div><button class="btn-small" style="background:#f59e0b; color:white; padding: 6px 12px; font-size: 13px; margin-right: 8px;" onclick="editarPrecoSalvo(${f.id})">✏️</button><button class="btn-danger" style="padding: 6px 12px;" onclick="delPrecoSalvo(${f.id})">X</button></div></div><div class="row" style="margin-top: 15px; text-align: center;"><div class="col" style="background: #f1f5f9; padding: 10px; border-radius: 4px;"><div style="font-size: 11px; font-weight: bold; color:#475569">BALCÃO</div><div style="font-weight: bold; font-size: 15px; color: #334155;">${balcao}</div></div><div class="col" style="background: #e0f2fe; padding: 10px; border-radius: 4px;"><div style="font-size: 11px; font-weight: bold; color:#0284c7">DELIVERY</div><div style="font-weight: bold; font-size: 15px; color: #0369a1;">${f.precoDireto}</div></div><div class="col" style="background: #fce7f3; padding: 10px; border-radius: 4px;"><div style="font-size: 11px; font-weight: bold; color:#be185d">IFOOD</div><div style="font-weight: bold; font-size: 15px; color: #be185d;">${f.precoIfood}</div></div></div></div>`; } }); document.getElementById('lista-precos-salvos').innerHTML = html || '<p style="text-align:center; font-size:14px; color:#64748b;">Cardápio vazio.</p>';
-        }
-
-        function calcRaioX() {
-            let id = parseInt(document.getElementById('raio-produto').value); let p = parseFloat(document.getElementById('raio-preco').value) || 0; let elRsDir = document.getElementById('raio-rs-direto'); let elRsIf = document.getElementById('raio-rs-ifood');
-            if(isNaN(id) || p === 0) { elRsDir.innerText = "R$ 0.00"; elRsIf.innerText = "R$ 0.00"; return; }
-            let ficha = db.fichas.find(f => f.id === id); if(!ficha) return;
-            let cmv = calcularCMVFicha(ficha); 
-            let dnaTotal = getDnaPercentItem(ficha);
-            let taxaIfood = (db.dna.ifood || 0) / 100;
-            let lRsDir = p - (p * dnaTotal) - cmv; let lRsIf = p - (p * taxaIfood) - (p * dnaTotal) - cmv; 
-            elRsDir.innerText = 'R$ ' + lRsDir.toFixed(2); elRsDir.style.color = lRsDir > 0 ? 'green' : 'red'; elRsIf.innerText = 'R$ ' + lRsIf.toFixed(2); elRsIf.style.color = lRsIf > 0 ? 'green' : 'red';
-        }
-
-        let editandoCompraId = null;
-        function loadInsumosListaCompras() { let sel = document.getElementById('compra-insumo'); sel.innerHTML = '<option value="">-- Item Avulso --</option>'; db.insumos.forEach(i => { sel.innerHTML += `<option value="${i.id}">${i.nome} (${i.medidaOriginal})</option>`; }); }
-        function vincularInsumoCompra() { let select = document.getElementById('compra-insumo'); if(select.value !== "") { let insumo = db.insumos.find(i => i.id == select.value); if(insumo) { document.getElementById('compra-nome').value = insumo.nome; document.getElementById('compra-qtd').value = insumo.qtdOriginal; } } else { document.getElementById('compra-nome').value = ''; document.getElementById('compra-qtd').value = ''; } }
-        function editarCompra(id) { let item = db.listaCompras.find(c => c.id === id); if(!item) return; document.getElementById('compra-nome').value = item.nome; document.getElementById('compra-qtd').value = item.qtd || ''; if(item.insumoId && document.getElementById('compra-insumo')) { document.getElementById('compra-insumo').value = item.insumoId; } else { document.getElementById('compra-insumo').value = ''; } editandoCompraId = id; let btnSalvar = document.getElementById('btn-salvar-compra'); btnSalvar.innerText = "✓ Atualizar Item"; btnSalvar.style.backgroundColor = "#f59e0b"; document.getElementById('btn-cancelar-compra').style.display = "block"; document.querySelector('.main-content').scrollTo({ top: 0, behavior: 'smooth' }); }
-        function cancelarEdicaoCompra() { editandoCompraId = null; document.getElementById('compra-nome').value = ''; document.getElementById('compra-qtd').value = ''; document.getElementById('compra-insumo').value = ''; let btnSalvar = document.getElementById('btn-salvar-compra'); btnSalvar.innerText = "+ Adicionar na Lista"; btnSalvar.style.backgroundColor = "var(--secondary)"; document.getElementById('btn-cancelar-compra').style.display = "none"; }
-        function addCompra() { let nome = document.getElementById('compra-nome').value; let qtd = document.getElementById('compra-qtd').value; let insumoIdSelect = document.getElementById('compra-insumo').value; let insumoId = insumoIdSelect ? parseInt(insumoIdSelect) : null; if(!nome) return alert("Digite o nome!"); if (editandoCompraId) { let index = db.listaCompras.findIndex(c => c.id === editandoCompraId); if (index !== -1) { db.listaCompras[index].nome = nome; db.listaCompras[index].qtd = qtd; db.listaCompras[index].insumoId = insumoId; } cancelarEdicaoCompra(); } else { db.listaCompras.push({ id: Date.now(), nome: nome, qtd: qtd, checked: false, insumoId: insumoId }); document.getElementById('compra-nome').value = ''; document.getElementById('compra-qtd').value = ''; document.getElementById('compra-insumo').value = ''; } salvarDb(); renderListaCompras(); }
-        function delCompra(id) { db.listaCompras = db.listaCompras.filter(c => c.id !== id); salvarDb(); renderListaCompras(); }
-        function toggleCompra(id) { let item = db.listaCompras.find(c => c.id === id); if(item) { item.checked = !item.checked; salvarDb(); renderListaCompras(); } }
-        function limparComprasConcluidas() { db.listaCompras = db.listaCompras.filter(c => !c.checked); salvarDb(); renderListaCompras(); }
-        
-        function syncInsumo(compraId, insumoId) { 
-            let preco = parseFloat(document.getElementById('sync-preco-' + compraId).value); 
-            let qtd = parseFloat(document.getElementById('sync-qtd-' + compraId).value); 
-            let validade = document.getElementById('sync-val-' + compraId).value; 
-            if(isNaN(preco) || isNaN(qtd) || preco <= 0 || qtd <= 0) return alert("Preencha o preço total e quantidade."); 
-            
-            let insumo = db.insumos.find(i => i.id === insumoId); 
-            if(insumo) { 
-                let baseQtd = qtd; 
-                if(insumo.medidaOriginal === 'KG' || insumo.medidaOriginal === 'L') baseQtd = qtd * 1000; 
-                let estoqueAnterior = insumo.lotes ? insumo.lotes.reduce((acc, l) => acc + parseFloat(l.qtd), 0) : 0;
-                let valorEstoqueAnterior = estoqueAnterior * (insumo.custoUnitario || 0);
-                let novoEstoqueTotal = estoqueAnterior + baseQtd;
-                let novoCustoUnitario = (valorEstoqueAnterior + preco) / (novoEstoqueTotal || 1);
-
-                if(!insumo.lotes) insumo.lotes = []; 
-                insumo.lotes.push({ id: Date.now(), qtd: qtd, validade: validade, preco: preco }); 
-                
-                insumo.custoUnitario = novoCustoUnitario; 
-                insumo.preco = preco; 
-                insumo.qtdOriginal = qtd; 
-                
-                let compraItem = db.listaCompras.find(c => c.id === compraId); 
-                if(compraItem) compraItem.checked = true; 
-                
-                salvarDb(); 
-                alert("✅ Estoque Lote atualizado com custo médio calculado!"); 
-                renderListaCompras(); 
-                renderDashboard(); 
-            } 
-        }
-
-        function renderListaCompras() {
-            let html = ''; let sorted = [...db.listaCompras].sort((a,b) => (a.checked === b.checked) ? 0 : a.checked ? 1 : -1);
-            sorted.forEach(c => { let textDec = c.checked ? 'line-through' : 'none'; let color = c.checked ? '#94a3b8' : 'var(--primary)'; let syncHtml = ''; if(c.insumoId && !c.checked) { let insumo = db.insumos.find(i => i.id === c.insumoId); if(insumo) { syncHtml = `<div style="margin-top: 15px; background: #f1f5f9; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; display: flex; flex-direction: column; gap: 8px;"><div style="font-size: 12px; color: #475569; font-weight: bold;">⭮ Novo Lote (Custo de Reposição)</div><div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;"><input type="number" id="sync-preco-${c.id}" placeholder="Preço (R$)" style="margin: 0; padding: 10px; font-size: 14px; flex: 1; min-width: 100px;"><input type="number" id="sync-qtd-${c.id}" value="${insumo.qtdOriginal}" style="margin: 0; padding: 10px; font-size: 14px; width: 80px;"><span style="font-size: 12px; color: #64748b;">${insumo.medidaOriginal}</span></div><div style="display: flex; gap: 10px; align-items: center;"><span style="font-size: 12px; color: #64748b;">Validade:</span><input type="date" id="sync-val-${c.id}" style="margin: 0; padding: 10px; font-size: 14px; flex: 1;"><button class="btn-small" style="margin: 0; padding: 10px 15px; background: var(--success); color: white; font-weight: bold;" onclick="event.stopPropagation(); syncInsumo(${c.id}, ${insumo.id})">✔ Gerar Lote</button></div></div>`; } } html += `<div class="list-item" style="opacity: ${c.checked ? '0.6' : '1'};"><div style="display: flex; align-items: flex-start; justify-content: space-between;"><div style="display: flex; align-items: flex-start; gap: 15px; flex: 1; cursor: pointer;" onclick="toggleCompra(${c.id})"><input type="checkbox" ${c.checked ? 'checked' : ''} style="width: 24px; height: 24px; margin: 0; margin-top: 2px;"><div><div style="font-weight: bold; color: ${color}; text-decoration: ${textDec}; font-size: 16px;">${c.nome}</div><div style="font-size: 13px; color: #64748b;">Qtd sugerida: ${c.qtd || '1'}</div></div></div><div><button class="btn-small" style="background:#f59e0b; color:white; padding: 8px 12px; font-size: 13px; margin-right: 8px;" onclick="event.stopPropagation(); editarCompra(${c.id})">✏️</button><button class="btn-danger" style="padding: 8px 12px;" onclick="event.stopPropagation(); delCompra(${c.id})">X</button></div></div>${syncHtml}</div>`; }); document.getElementById('lista-de-compras-container').innerHTML = html || '<p style="text-align:center; font-size:14px;">Sua lista está vazia.</p>';
-        }
-
-        let editandoCaixaId = null;
-
-        function calcularTotalBancoAtual() {
-            let total = 0;
-            db.caixa.forEach(c => {
-                if(!c) return;
-                
-                let p = parseFloat(c.pix) || 0;
-                let cart = parseFloat(c.cartao) || 0;
-                let ap = parseFloat(c.aporte) || 0;
-                
-                let mot = parseFloat(c.motoboy) || 0;
-                let comp = parseFloat(c.compras) || 0;
-                let sang = parseFloat(c.sangria) || 0;
-
-                let entradaReal = p + cart + ap;
-                let saidaReal = mot + comp + sang;
-                
-                total += (entradaReal - saidaReal);
-            });
-            return total;
-        }
-
-        function calibrarSaldoBancario() {
-            let novoValorStr = prompt("Quanto de dinheiro REAL você tem na sua conta bancária / gaveta física hoje? (Use ponto para centavos, ex: 300.50)");
-            if(novoValorStr === null || novoValorStr.trim() === "") return;
-            
-            let novoValor = parseFloat(novoValorStr);
-            if(isNaN(novoValor)) return alert("Por favor, digite um número válido.");
-
-            let saldoAtual = calcularTotalBancoAtual();
-            let diferenca = novoValor - saldoAtual;
-
-            if(diferenca !== 0) {
-                let aporte = diferenca > 0 ? diferenca : 0;
-                let sangria = diferenca < 0 ? Math.abs(diferenca) : 0;
-                
-                db.caixa.push({ 
-                    id: Date.now(), 
-                    data: getDataLocal(), 
-                    pix: 0, cartao: 0, ifood: 0, motoboy: 0, compras: 0,
-                    aporte: aporte, sangria: sangria,
-                    entradaLiquida: 0, saidas: 0, saldo: 0,
-                    nota: "Calibração Manual"
-                }); 
-                salvarDb();
-                renderCaixa();
-                alert(`✅ Saldo calibrado com sucesso! Um registro de ajuste de R$ ${Math.abs(diferenca).toFixed(2)} foi inserido.`);
-            } else {
-                alert("O seu saldo real já bate perfeitamente com os registros do sistema.");
-            }
-        }
-
-        function editarCaixa(id) {
-            let item = db.caixa.find(c => c.id === id);
-            if(!item) return;
-            
-            document.getElementById('caixa-data').value = item.data || '';
-            document.getElementById('caixa-pix').value = item.pix || '';
-            document.getElementById('caixa-cartao').value = item.cartao || '';
-            document.getElementById('caixa-ifood').value = item.ifood || '';
-            document.getElementById('caixa-aporte').value = item.aporte || '';
-            document.getElementById('caixa-motoboy').value = item.motoboy || '';
-            document.getElementById('caixa-compras').value = item.compras || '';
-            document.getElementById('caixa-sangria').value = item.sangria || '';
-            
-            editandoCaixaId = id;
-            let btnSalvar = document.getElementById('btn-salvar-caixa');
-            btnSalvar.innerText = "✓ Atualizar Lançamento";
-            btnSalvar.style.backgroundColor = "#f59e0b";
-            document.getElementById('btn-cancelar-caixa').style.display = "block";
-            document.querySelector('.main-content').scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function cancelarEdicaoCaixa() {
-            editandoCaixaId = null;
-            document.getElementById('caixa-data').value = '';
-            document.getElementById('caixa-pix').value = '';
-            document.getElementById('caixa-cartao').value = '';
-            document.getElementById('caixa-ifood').value = '';
-            document.getElementById('caixa-aporte').value = '';
-            document.getElementById('caixa-motoboy').value = '';
-            document.getElementById('caixa-compras').value = '';
-            document.getElementById('caixa-sangria').value = '';
-            
-            let btnSalvar = document.getElementById('btn-salvar-caixa');
-            btnSalvar.innerText = "+ Salvar Fechamento";
-            btnSalvar.style.backgroundColor = "var(--secondary)";
-            document.getElementById('btn-cancelar-caixa').style.display = "none";
-        }
-
-        function limparFiltroCaixa() { document.getElementById('filtro-mes').value = ''; renderCaixa(); }
-        
-        function addCaixa() { 
-            let data = document.getElementById('caixa-data').value || getDataLocal();
-            
-            let pix = parseFloat(document.getElementById('caixa-pix').value) || 0; 
-            let cartao = parseFloat(document.getElementById('caixa-cartao').value) || 0; 
-            let aporte = parseFloat(document.getElementById('caixa-aporte').value) || 0; 
-            let ifood = parseFloat(document.getElementById('caixa-ifood').value) || 0; 
-            
-            let motoboy = parseFloat(document.getElementById('caixa-motoboy').value) || 0; 
-            let compras = parseFloat(document.getElementById('caixa-compras').value) || 0; 
-            let sangria = parseFloat(document.getElementById('caixa-sangria').value) || 0; 
-            
-            let entradaLiquida = pix + cartao + ifood; 
-            let saidasOperacionais = motoboy + compras; 
-            let saldoContabil = entradaLiquida - saidasOperacionais; 
-            
-            if(editandoCaixaId) {
-                let index = db.caixa.findIndex(c => c.id === editandoCaixaId);
-                if(index !== -1) {
-                    db.caixa[index].data = data;
-                    db.caixa[index].pix = pix;
-                    db.caixa[index].cartao = cartao;
-                    db.caixa[index].ifood = ifood;
-                    db.caixa[index].aporte = aporte;
-                    db.caixa[index].motoboy = motoboy;
-                    db.caixa[index].compras = compras;
-                    db.caixa[index].sangria = sangria;
-                    db.caixa[index].entradaLiquida = entradaLiquida;
-                    db.caixa[index].saidas = saidasOperacionais;
-                    db.caixa[index].saldo = saldoContabil;
-                }
-                cancelarEdicaoCaixa();
-            } else {
-                db.caixa.push({ 
-                    id: Date.now(), data: data, pix: pix, cartao: cartao, ifood: ifood, aporte: aporte, 
-                    motoboy: motoboy, compras: compras, sangria: sangria, 
-                    entradaLiquida: entradaLiquida, saidas: saidasOperacionais, saldo: saldoContabil 
-                }); 
-                document.getElementById('caixa-data').value = ''; document.getElementById('caixa-pix').value = ''; document.getElementById('caixa-cartao').value = ''; document.getElementById('caixa-ifood').value = ''; document.getElementById('caixa-aporte').value = ''; document.getElementById('caixa-motoboy').value = ''; document.getElementById('caixa-compras').value = ''; document.getElementById('caixa-sangria').value = '';
-            }
-            
-            salvarDb(); 
-            renderCaixa(); 
-        }
-
-        function delCaixa(id) { if(confirm("Deseja apagar este registro?")) { db.caixa = db.caixa.filter(c => c.id !== id); salvarDb(); renderCaixa(); } }
-        
-        function renderCaixa() { 
-            let filtroMes = document.getElementById('filtro-mes').value; 
-            let html = ''; 
-            let totE = 0; let totS = 0;
-            
-            let sorted = [...db.caixa].sort((a,b) => {
-                let d1 = (a && a.data) ? new Date(a.data).getTime() : 0;
-                let d2 = (b && b.data) ? new Date(b.data).getTime() : 0;
-                return d2 - d1;
-            });
-            
-            for(let i = 0; i < sorted.length; i++) { 
-                let c = sorted[i]; 
-                if(!c) continue; 
-                
-                let dataStr = c.data || '';
-                if(filtroMes && dataStr.substring(0, 7) !== filtroMes) continue; 
-                
-                let isCalibracao = c.nota === "Calibração Manual";
-
-                let ent = parseFloat(c.entradaLiquida) || 0;
-                let sai = parseFloat(c.saidas) || 0;
-                let sal = parseFloat(c.saldo) !== undefined && !isNaN(parseFloat(c.saldo)) ? parseFloat(c.saldo) : (ent - sai);
-
-                if(!isCalibracao) {
-                    totE += ent; 
-                    totS += sai; 
-                }
-
-                let p = parseFloat(c.pix) || 0;
-                let cart = parseFloat(c.cartao) || 0;
-                let ap = parseFloat(c.aporte) || 0;
-                let mot = parseFloat(c.motoboy) || 0;
-                let comp = parseFloat(c.compras) || 0;
-                let sang = parseFloat(c.sangria) || 0;
-                
-                let saldoRealLocal = (p + cart + ap) - (mot + comp + sang);
-
-                let dataBr = dataStr ? dataStr.split('-').reverse().join('/') : 'Sem Data'; 
-                
-                if (isCalibracao) {
-                     html += `<div class="list-item" style="border-left: 4px solid #f59e0b; background: #fffbeb;">
-                        <div class="list-title">Data: ${dataBr} <button class="btn-danger" onclick="delCaixa(${c.id})">X</button></div>
-                        <div style="font-size: 13px; color: #d97706; font-weight: bold; margin-top: 5px;">⚖️ CALIBRAÇÃO DE SALDO BANCÁRIO</div>
-                        <div class="list-subtitle">Ajuste aplicado: R$ ${saldoRealLocal.toFixed(2)}</div>
-                    </div>`; 
-                } else {
-                    html += `<div class="list-item">
-                        <div class="list-title">Data: ${dataBr} 
-                            <div>
-                                <button class="btn-small" style="background:#f59e0b; color:white; padding: 6px 12px; font-size: 13px; margin-right: 8px;" onclick="editarCaixa(${c.id})">✏️</button>
-                                <button class="btn-danger" onclick="delCaixa(${c.id})">X</button>
+                    <div class="item">
+                        <img src="${item.img}" class="item-img" alt="${item.name}">
+                        <div class="item-info">
+                            <h3>${item.name}</h3>
+                            <p>${item.desc}</p>
+                            <div class="price-row">
+                                <span class="price">R$ ${item.price.toFixed(2)}</span>
+                                <button class="btn-add" onclick="addToCart(${item.id}, event)">+ Add</button>
                             </div>
                         </div>
-                        <div class="list-subtitle">Faturamento Operacional (C/ iFood): R$ ${ent.toFixed(2)}</div>
-                        <div class="list-subtitle">Despesas da Loja: R$ ${sai.toFixed(2)}</div>
-                        <div style="font-weight: bold; color: ${sal >= 0 ? 'green' : 'red'}; font-size: 16px; margin-top: 8px;">Saldo Contábil do Dia: R$ ${sal.toFixed(2)}</div>
-                        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0; font-size: 13px; color: #0284c7; font-weight: bold;">
-                            💸 Dinheiro que movimentou na conta: R$ ${saldoRealLocal.toFixed(2)}
-                        </div>
-                    </div>`; 
-                }
-            } 
-            
-            document.getElementById('resumo-entradas').innerText = 'R$ ' + totE.toFixed(2); 
-            document.getElementById('resumo-saidas').innerText = 'R$ ' + totS.toFixed(2); 
-            let saldoFinal = totE - totS; 
-            document.getElementById('resumo-saldo').innerText = 'R$ ' + saldoFinal.toFixed(2); 
-            document.getElementById('resumo-saldo').style.color = saldoFinal >= 0 ? 'green' : 'red'; 
-            
-            let saldoMestre = calcularTotalBancoAtual();
-            document.getElementById('saldo-bancario-total').innerText = 'R$ ' + saldoMestre.toFixed(2);
-
-            document.getElementById('lista-caixa').innerHTML = html || '<p style="text-align:center; font-size:14px; color:#64748b;">Nenhum registro encontrado para este mês.</p>'; 
+                    </div>
+                `;
+            });
+            document.getElementById('menu-items').innerHTML = html;
         }
 
-        // CARREGAMENTO INICIAL DO NOVO SISTEMA MULTI-LOJAS E NUVEM
-        initMultiStore();
+        function addToCart(id, event) {
+            const item = menu.find(i => i.id === id);
+            const cartItem = cart.find(i => i.id === id);
+            
+            if (cartItem) cartItem.qtd++;
+            else cart.push({ ...item, qtd: 1 });
+            
+            updateCart();
+            
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.innerText = "✓ Add";
+            btn.style.background = "#10b981";
+            btn.style.color = "white";
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.background = "var(--primary)";
+                btn.style.color = "#000";
+            }, 1000);
+        }
+
+        function updateCart() {
+            let count = 0; let total = 0;
+            cart.forEach(item => { count += item.qtd; total += item.price * item.qtd; });
+            
+            document.getElementById('cart-count').innerText = count;
+            document.getElementById('cart-total-bar').innerText = total.toFixed(2);
+            document.getElementById('cart-total-modal').innerText = total.toFixed(2);
+            
+            document.getElementById('cart-bar').style.display = count > 0 ? 'block' : 'none';
+            if(count === 0) closeCart();
+            renderCartItems();
+        }
+
+        function renderCartItems() {
+            let html = '';
+            cart.forEach((item, index) => {
+                html += `
+                    <div class="cart-item">
+                        <div>
+                            <div style="font-weight: bold; color: #fff;">${item.name}</div>
+                            <div style="color: var(--success); font-weight: bold; margin-top: 5px;">
+                                R$ ${(item.price * item.qtd).toFixed(2)} 
+                                <span style="color: #64748b; font-size: 12px; font-weight: normal;">(R$ ${item.price.toFixed(2)} un)</span>
+                            </div>
+                        </div>
+                        <div class="cart-controls">
+                            <button onclick="changeQtd(${index}, -1)">-</button>
+                            <span style="margin: 0 10px; font-weight: bold;">${item.qtd}</span>
+                            <button onclick="changeQtd(${index}, 1)">+</button>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('cart-items-list').innerHTML = html || '<p style="color: #64748b;">Seu carrinho está vazio.</p>';
+        }
+
+        function changeQtd(index, delta) {
+            cart[index].qtd += delta;
+            if (cart[index].qtd <= 0) cart.splice(index, 1);
+            updateCart();
+        }
+
+        function openCart() { 
+            document.getElementById('cart-modal').style.display = 'block'; 
+            document.body.style.overflow = 'hidden'; 
+        }
         
+        function closeCart() { 
+            document.getElementById('cart-modal').style.display = 'none'; 
+            document.body.style.overflow = 'auto';
+        }
+
+        document.getElementById('c-payment').addEventListener('change', function() {
+            document.getElementById('troco-div').style.display = this.value === 'Dinheiro' ? 'block' : 'none';
+        });
+
+        function sendOrder() {
+            const name = document.getElementById('c-name').value.trim();
+            const address = document.getElementById('c-address').value.trim();
+            const obs = document.getElementById('c-obs').value.trim();
+            const payment = document.getElementById('c-payment').value;
+            const troco = document.getElementById('c-troco').value;
+
+            if (!name || !address) {
+                alert("🦍 Chefe, preencha seu nome e endereço para a gente entregar!");
+                return;
+            }
+
+            let text = "🦍 *NOVO PEDIDO - GORILLAZ BURGUER* 🦍%0A%0A";
+            text += "*🛒 ITENS DO PEDIDO:*%0A";
+            let total = 0;
+            cart.forEach(item => {
+                text += `▪️ ${item.qtd}x ${item.name} - R$ ${(item.price * item.qtd).toFixed(2)}%0A`;
+                total += item.price * item.qtd;
+            });
+            
+            text += `%0A*💰 TOTAL:* R$ ${total.toFixed(2)}%0A`;
+            text += `*💳 PAGAMENTO:* ${payment}`;
+            if (payment === 'Dinheiro' && troco) text += ` (Troco para R$ ${troco})`;
+            
+            text += "%0A%0A*📍 DADOS DA ENTREGA:*%0A";
+            text += `*Nome:* ${name}%0A*Endereço:* ${address}%0A`;
+            if (obs) text += `*Observação:* ${obs}%0A`;
+
+            window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+        }
+
+        loadMenuFromSheet();
     </script>
 </body>
 </html>
