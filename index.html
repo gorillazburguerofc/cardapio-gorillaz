@@ -91,7 +91,6 @@
             cursor: pointer; 
         }
         
-        /* Carrinho Flutuante */
         .cart-bar { 
             position: fixed; 
             bottom: 0; 
@@ -109,7 +108,6 @@
             z-index: 999;
         }
         
-        /* Modais */
         .modal { 
             display: none; 
             position: fixed; 
@@ -144,7 +142,6 @@
             border-radius: 50%;
         }
         
-        /* Adicionais */
         .addon-item {
             display: flex;
             justify-content: space-between;
@@ -235,7 +232,6 @@
                 <p id="detail-desc" style="color: #94a3b8; font-size: 14px; line-height: 1.5; margin-bottom: 15px;"></p>
                 <h3 style="color: var(--success); margin: 0 0 20px 0;">R$ <span id="detail-price"></span></h3>
 
-                <!-- Área de Adicionais injetada via JS -->
                 <div id="addons-container"></div>
 
                 <div class="form-group" style="margin-top: 20px;">
@@ -294,11 +290,11 @@
 
     <script>
         const phone = "5586994466786"; 
-        // 👉 COLE O SEU ID AQUI
-        const SHEET_ID = "1o-DiM4TXG8U--60V2oMdDYcngW9Lq9zEHsscflODR3Y"; 
+        // 👉 COLE O SEU ID AQUI ABAIXO
+        const SHEET_ID = "COLE_SEU_ID_AQUI"; 
         
         let menu = [];
-        let adicionais = []; // NOVO: Array que vai guardar os adicionais puxados da planilha
+        let adicionais = [];
         let cart = [];
         let currentItemView = null; 
         let currentItemBasePrice = 0;
@@ -324,15 +320,15 @@
                     const id = row.c[0].v;
                     const category = row.c[1] ? row.c[1].v.toString().trim() : 'Gorillaz Menu';
                     const name = row.c[2] ? row.c[2].v : '';
-                    const desc = row.c[3] ? row.c[3].v : '';
+                    const desc = row.c[3] ? row.c[3].v.toString().trim() : '';
                     const price = row.c[4] ? parseFloat(row.c[4].v) : 0;
                     const disponivel = row.c[5] ? row.c[5].v : '';
                     const img = row.c[6] ? row.c[6].v : 'https://via.placeholder.com/150/1e1e1e/f59e0b?text=Gorillaz';
                     
                     if(disponivel.toString().toUpperCase() === 'SIM') {
-                        // Se a categoria for "Adicionais", vai para a lista de adicionais
                         if(category.toUpperCase() === 'ADICIONAIS') {
-                            novosAdicionais.push({ id, nome: name, preco: price });
+                            // O campo desc aqui serve como a nossa regra secreta de filtro
+                            novosAdicionais.push({ id, nome: name, preco: price, desc: desc });
                         } else {
                             newMenu.push({ id, category, name, desc, price, img });
                         }
@@ -390,11 +386,23 @@
             document.getElementById('detail-price').innerText = item.price.toFixed(2);
             document.getElementById('detail-obs').value = '';
 
-            // Renderiza os adicionais que vieram da Planilha
+            // 👉 A MÁGICA ACONTECE AQUI: Filtra quais adicionais podem aparecer neste lanche
             let addonsHtml = '';
-            if(adicionais.length > 0) {
-                addonsHtml += `<h3 style="color: var(--primary); border-bottom: 1px solid #333; padding-bottom: 8px;">Turbine seu lanche! (Adicionais)</h3>`;
-                adicionais.forEach((add) => {
+            let addonsPermitidos = adicionais.filter(add => {
+                if (!add.desc) return true; // Se a descrição do adicional estiver vazia, vai para todos os lanches
+                
+                const regra = add.desc.toLowerCase();
+                const nomeLanche = currentItemView.name.toLowerCase();
+                const catLanche = currentItemView.category.toLowerCase();
+                const idLanche = currentItemView.id.toString();
+                
+                // Se a regra escrita na planilha bater com o nome, categoria ou ID do lanche atual, ele aparece!
+                return nomeLanche.includes(regra) || catLanche.includes(regra) || idLanche === regra;
+            });
+
+            if(addonsPermitidos.length > 0) {
+                addonsHtml += `<h3 style="color: var(--primary); border-bottom: 1px solid #333; padding-bottom: 8px;">Turbine seu pedido! (Adicionais)</h3>`;
+                addonsPermitidos.forEach((add) => {
                     addonsHtml += `
                         <div class="addon-item">
                             <label>
@@ -406,9 +414,9 @@
                     `;
                 });
             }
+            
             document.getElementById('addons-container').innerHTML = addonsHtml;
 
-            // Ativa o cálculo automático
             document.querySelectorAll('.addon-checkbox').forEach(chk => {
                 chk.addEventListener('change', calculateItemTotal);
             });
