@@ -54,7 +54,7 @@
             border: 1px solid #2a2a2a;
             gap: 15px;
             align-items: center;
-            cursor: pointer; /* Indica que é clicável */
+            cursor: pointer;
             transition: 0.2s;
         }
         .item:active { transform: scale(0.98); }
@@ -109,7 +109,7 @@
             z-index: 999;
         }
         
-        /* Modais (Carrinho e Detalhes do Item) */
+        /* Modais */
         .modal { 
             display: none; 
             position: fixed; 
@@ -220,12 +220,11 @@
         </div>
     </div>
 
-    <!-- Barra inferior do carrinho -->
     <div class="cart-bar" id="cart-bar" onclick="openCart()">
         🛒 Ver Pedido (<span id="cart-count">0</span>) - R$ <span id="cart-total-bar">0.00</span>
     </div>
 
-    <!-- Modal Detalhes do Item (FOTO GRANDE E ADICIONAIS) -->
+    <!-- Modal Detalhes do Item -->
     <div class="modal" id="item-modal">
         <div class="modal-content" style="padding: 0;">
             <span class="close" onclick="closeItem()">&times;</span>
@@ -236,8 +235,8 @@
                 <p id="detail-desc" style="color: #94a3b8; font-size: 14px; line-height: 1.5; margin-bottom: 15px;"></p>
                 <h3 style="color: var(--success); margin: 0 0 20px 0;">R$ <span id="detail-price"></span></h3>
 
-                <h3 style="color: var(--primary); border-bottom: 1px solid #333; padding-bottom: 8px;">Turbine seu lanche! (Adicionais)</h3>
-                <div id="addons-list"></div>
+                <!-- Área de Adicionais injetada via JS -->
+                <div id="addons-container"></div>
 
                 <div class="form-group" style="margin-top: 20px;">
                     <label>Alguma observação?</label>
@@ -251,7 +250,7 @@
         </div>
     </div>
 
-    <!-- Tela do Carrinho (Modal) -->
+    <!-- Tela do Carrinho -->
     <div class="modal" id="cart-modal">
         <div class="modal-content">
             <span class="close" onclick="closeCart()">&times;</span>
@@ -294,21 +293,14 @@
     </div>
 
     <script>
-        // CONFIGURAÇÕES INICIAIS
         const phone = "5586994466786"; 
-        const SHEET_ID = "1o-DiM4TXG8U--60V2oMdDYcngW9Lq9zEHsscflODR3Y"; 
-        
-        // 👉 SEUS ADICIONAIS FICAM AQUI! Pode colocar quantos quiser.
-        const adicionaisPadrao = [
-            { id: 'a1', nome: 'Bacon Extra', preco: 4.00 },
-            { id: 'a2', nome: 'Cheddar Cremoso', preco: 3.50 },
-            { id: 'a3', nome: 'Hambúrguer Extra 90g', preco: 8.00 },
-            { id: 'a4', nome: 'Ovo Frito', preco: 2.00 }
-        ];
+        // 👉 COLE O SEU ID AQUI
+        const SHEET_ID = "COLE_SEU_ID_AQUI"; 
         
         let menu = [];
+        let adicionais = []; // NOVO: Array que vai guardar os adicionais puxados da planilha
         let cart = [];
-        let currentItemView = null; // Guarda o item que o cliente clicou para ver
+        let currentItemView = null; 
         let currentItemBasePrice = 0;
 
         async function loadMenuFromSheet() {
@@ -323,12 +315,14 @@
                 const jsonStr = text.substring(47).slice(0, -2);
                 const data = JSON.parse(jsonStr);
                 const rows = data.table.rows;
+                
                 const newMenu = [];
+                const novosAdicionais = [];
                 
                 rows.forEach(row => {
                     if(!row.c[0] || row.c[0].v === null) return; 
                     const id = row.c[0].v;
-                    const category = row.c[1] ? row.c[1].v : 'Gorillaz Menu';
+                    const category = row.c[1] ? row.c[1].v.toString().trim() : 'Gorillaz Menu';
                     const name = row.c[2] ? row.c[2].v : '';
                     const desc = row.c[3] ? row.c[3].v : '';
                     const price = row.c[4] ? parseFloat(row.c[4].v) : 0;
@@ -336,10 +330,17 @@
                     const img = row.c[6] ? row.c[6].v : 'https://via.placeholder.com/150/1e1e1e/f59e0b?text=Gorillaz';
                     
                     if(disponivel.toString().toUpperCase() === 'SIM') {
-                        newMenu.push({ id, category, name, desc, price, img });
+                        // Se a categoria for "Adicionais", vai para a lista de adicionais
+                        if(category.toUpperCase() === 'ADICIONAIS') {
+                            novosAdicionais.push({ id, nome: name, preco: price });
+                        } else {
+                            newMenu.push({ id, category, name, desc, price, img });
+                        }
                     }
                 });
+                
                 menu = newMenu;
+                adicionais = novosAdicionais;
                 renderMenu();
             } catch (error) {
                 console.error("Erro:", error);
@@ -361,7 +362,6 @@
                     html += `<div class="category">${item.category}</div>`;
                     currentCategory = item.category;
                 }
-                // Agora o item inteiro é clicável e chama a tela de detalhes
                 html += `
                     <div class="item" onclick="openItem(${item.id})">
                         <img src="${item.img}" class="item-img" alt="${item.name}">
@@ -379,40 +379,41 @@
             document.getElementById('menu-items').innerHTML = html;
         }
 
-        // 👉 LÓGICA DA TELA DE DETALHES DO ITEM E ADICIONAIS
         function openItem(id) {
             const item = menu.find(i => i.id === id);
             currentItemView = item;
             currentItemBasePrice = item.price;
 
-            // Preenche os dados na tela
             document.getElementById('detail-img').src = item.img;
             document.getElementById('detail-name').innerText = item.name;
             document.getElementById('detail-desc').innerText = item.desc;
             document.getElementById('detail-price').innerText = item.price.toFixed(2);
             document.getElementById('detail-obs').value = '';
 
-            // Renderiza os adicionais como checkboxes
+            // Renderiza os adicionais que vieram da Planilha
             let addonsHtml = '';
-            adicionaisPadrao.forEach((add, idx) => {
-                addonsHtml += `
-                    <div class="addon-item">
-                        <label>
-                            <input type="checkbox" class="addon-checkbox" value="${add.preco}" data-name="${add.nome}"> 
-                            ${add.nome}
-                        </label>
-                        <span class="addon-price">+ R$ ${add.preco.toFixed(2)}</span>
-                    </div>
-                `;
-            });
-            document.getElementById('addons-list').innerHTML = addonsHtml;
+            if(adicionais.length > 0) {
+                addonsHtml += `<h3 style="color: var(--primary); border-bottom: 1px solid #333; padding-bottom: 8px;">Turbine seu lanche! (Adicionais)</h3>`;
+                adicionais.forEach((add) => {
+                    addonsHtml += `
+                        <div class="addon-item">
+                            <label>
+                                <input type="checkbox" class="addon-checkbox" value="${add.preco}" data-name="${add.nome}"> 
+                                ${add.nome}
+                            </label>
+                            <span class="addon-price">+ R$ ${add.preco.toFixed(2)}</span>
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('addons-container').innerHTML = addonsHtml;
 
-            // Adiciona evento para calcular o total toda vez que clicar num adicional
+            // Ativa o cálculo automático
             document.querySelectorAll('.addon-checkbox').forEach(chk => {
                 chk.addEventListener('change', calculateItemTotal);
             });
 
-            calculateItemTotal(); // Calcula total inicial
+            calculateItemTotal();
             
             document.getElementById('item-modal').style.display = 'block';
             document.body.style.overflow = 'hidden';
@@ -431,12 +432,10 @@
             document.body.style.overflow = 'auto';
         }
 
-        // CONFIRMAR ITEM PARA O CARRINHO
         function confirmItem() {
             let addons = [];
             let addonTotal = 0;
             
-            // Pega os adicionais marcados
             document.querySelectorAll('.addon-checkbox:checked').forEach(chk => {
                 addons.push({ nome: chk.getAttribute('data-name'), preco: parseFloat(chk.value) });
                 addonTotal += parseFloat(chk.value);
@@ -445,9 +444,8 @@
             let obs = document.getElementById('detail-obs').value.trim();
             let precoFinal = currentItemBasePrice + addonTotal;
 
-            // Cria um item único para o carrinho (mesmo que seja o mesmo lanche, pode ter adicionais diferentes)
             cart.push({
-                cartId: Date.now(), // ID único para não misturar lanches customizados
+                cartId: Date.now(), 
                 id: currentItemView.id,
                 name: currentItemView.name,
                 price: precoFinal,
@@ -461,7 +459,6 @@
             updateCart();
         }
 
-        // 👉 ATUALIZAÇÃO DO CARRINHO
         function updateCart() {
             let count = 0; let total = 0;
             cart.forEach(item => { count += item.qtd; total += item.price * item.qtd; });
@@ -478,7 +475,6 @@
         function renderCartItems() {
             let html = '';
             cart.forEach((item, index) => {
-                // Formata os adicionais e observações para aparecerem no carrinho
                 let extrasHtml = '';
                 if(item.addons.length > 0) {
                     extrasHtml += `<div style="font-size: 12px; color: var(--primary); margin-top: 4px;">+ ${item.addons.map(a => a.nome).join(', ')}</div>`;
