@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cardápio Digital - Gorillaz Burguer</title>
+    <title>Cardápio Digital - Hamburgueria Gorillas</title>
     <style>
         :root {
             --primary: #f59e0b;
@@ -235,7 +235,7 @@
                 <div id="addons-container"></div>
 
                 <div class="form-group" style="margin-top: 20px;">
-                    <label>Alguma observação?</label>
+                    <label>Alguma observação neste item?</label>
                     <input type="text" id="detail-obs" placeholder="Ex: Tirar cebola, carne bem passada...">
                 </div>
 
@@ -269,6 +269,12 @@
                 <input type="text" id="c-address" placeholder="Ex: Rua A, 123 - Centro">
             </div>
             
+            <!-- 👉 AQUI ESTÁ O CAMPO DE OBSERVAÇÃO GERAL RESTAURADO -->
+            <div class="form-group">
+                <label>Observação Geral do Pedido (Opcional)</label>
+                <input type="text" id="c-obs" placeholder="Ex: Tirar cebola de todos, campainha quebrada...">
+            </div>
+            
             <h3 style="color: var(--primary); margin-top: 25px;">Pagamento</h3>
             <div class="form-group">
                 <label>Forma de Pagamento na Entrega</label>
@@ -290,7 +296,6 @@
 
     <script>
         const phone = "5586994466786"; 
-        // 👉 COLE O SEU ID AQUI ABAIXO
         const SHEET_ID = "1o-DiM4TXG8U--60V2oMdDYcngW9Lq9zEHsscflODR3Y"; 
         
         let menu = [];
@@ -327,7 +332,6 @@
                     
                     if(disponivel.toString().toUpperCase() === 'SIM') {
                         if(category.toUpperCase() === 'ADICIONAIS') {
-                            // O campo desc aqui serve como a nossa regra secreta de filtro
                             novosAdicionais.push({ id, nome: name, preco: price, desc: desc });
                         } else {
                             newMenu.push({ id, category, name, desc, price, img });
@@ -386,17 +390,15 @@
             document.getElementById('detail-price').innerText = item.price.toFixed(2);
             document.getElementById('detail-obs').value = '';
 
-            // 👉 A MÁGICA ACONTECE AQUI: Filtra quais adicionais podem aparecer neste lanche
             let addonsHtml = '';
             let addonsPermitidos = adicionais.filter(add => {
-                if (!add.desc) return true; // Se a descrição do adicional estiver vazia, vai para todos os lanches
+                if (!add.desc) return true; 
                 
                 const regra = add.desc.toLowerCase();
                 const nomeLanche = currentItemView.name.toLowerCase();
                 const catLanche = currentItemView.category.toLowerCase();
                 const idLanche = currentItemView.id.toString();
                 
-                // Se a regra escrita na planilha bater com o nome, categoria ou ID do lanche atual, ele aparece!
                 return nomeLanche.includes(regra) || catLanche.includes(regra) || idLanche === regra;
             });
 
@@ -535,6 +537,10 @@
         function sendOrder() {
             const name = document.getElementById('c-name').value.trim();
             const address = document.getElementById('c-address').value.trim();
+            
+            // 👉 PEGANDO A OBSERVAÇÃO GERAL AQUI
+            const obsGeral = document.getElementById('c-obs').value.trim();
+            
             const payment = document.getElementById('c-payment').value;
             const troco = document.getElementById('c-troco').value;
 
@@ -564,6 +570,11 @@
             
             text += "%0A%0A*📍 DADOS DA ENTREGA:*%0A";
             text += `*Nome:* ${name}%0A*Endereço:* ${address}%0A`;
+            
+            // 👉 INCLUINDO A OBSERVAÇÃO GERAL NO WHATSAPP
+            if (obsGeral) {
+                text += `*Obs Geral:* ${obsGeral}%0A`;
+            }
 
             window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
         }
